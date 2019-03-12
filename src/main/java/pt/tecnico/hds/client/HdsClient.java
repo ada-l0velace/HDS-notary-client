@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class HdsClient {
     private String _name;
     private int _port;
-    HdsClient(String name, int port) {
+    public HdsClient(String name, int port) {
         _name = name;
         _port = port;
         startServer();
