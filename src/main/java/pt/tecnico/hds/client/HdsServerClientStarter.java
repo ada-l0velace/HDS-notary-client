@@ -1,0 +1,36 @@
+package pt.tecnico.hds.client;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class HdsServerClientStarter implements Runnable {
+    private int _port;
+
+    HdsServerClientStarter(int port) {
+        _port = port;
+    }
+
+    public void run() {
+        int count = 0;
+        try {
+            ServerSocket socket1 = new ServerSocket(_port);
+            socket1.setReuseAddress(true);
+            System.out.println("HDS Client Server Starter Initialized");
+            while (true) {
+                Socket connection = socket1.accept();
+
+                // obtaining input and out streams
+                DataInputStream dis = new DataInputStream(connection.getInputStream());
+                DataOutputStream dos = new DataOutputStream(connection.getOutputStream());
+                Runnable runnable = new HdsServerClient(connection, ++count, dis, dos);
+                Thread thread = new Thread(runnable);
+                thread.start();
+            }
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+}
