@@ -20,12 +20,13 @@ public class HdsServerClient implements Runnable {
     public void run() {
         String received;
         String toreturn;
-        loop: while (true) {
+        System.out.println("Client " + this.connection + " Opens...");
+        while (true) {
             try {
 
                 // Ask user what he wants
-                dos.writeUTF("What do you want?[buyGood]..\n" +
-                        "Type Exit to terminate connection.");
+                //dos.writeUTF("What do you want?[buyGood]..\n" +
+                //        "Type Exit to terminate connection.");
 
                 // receive the answer from client
                 received = dis.readUTF();
@@ -55,14 +56,16 @@ public class HdsServerClient implements Runnable {
                 switch (received) {
                     case "buyGood" :
                         //toreturn = "buyGood";
-                        //dos.writeUTF(toreturn);
-                        System.out.println("Client " + this.connection + " sends exit...");
+                        dos.writeUTF("Exit");
+                        /*connection.setSoLinger(true,0);
+                        connection.close();
                         System.out.println("Closing this connection.");
-                        this.connection.close();
                         System.out.println("Connection closed");
                         this.dis.close();
                         this.dos.close();
-                        break loop;
+                        */
+                        //Main.client.connectToServer("localhost", 19999);
+                        break;
 
                     default:
                         dos.writeUTF("Invalid input");
@@ -84,7 +87,7 @@ public class HdsServerClient implements Runnable {
                 }
             }
         }
-        Main.client.connectToServer("localhost", 19999);
+        //Main.client.connectToServer("localhost", 19999);
 
     }
 
