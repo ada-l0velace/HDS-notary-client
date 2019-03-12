@@ -1,12 +1,9 @@
 package pt.tecnico.hds.client;
 
-import java.io.BufferedOutputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.io.OutputStreamWriter;
-import java.io.BufferedInputStream;
-import java.io.IOException;
+import java.util.Scanner;
 
 public class Main {
 
@@ -15,57 +12,48 @@ public class Main {
         String host = "localhost";
         /** Define a port */
         int port = 19999;
+        try
+        {
+            Scanner scn = new Scanner(System.in);
 
-        StringBuffer instr = new StringBuffer();
-        String TimeStamp;
-        System.out.println("SocketClient initialized");
-        try {
-            /** Obtain an address object of the server */
-            InetAddress address = InetAddress.getByName(host);
-            /** Establish a socket connetion */
-            Socket connection = new Socket(address, port);
-            /** Instantiate a BufferedOutputStream object */
-            BufferedOutputStream bos = new BufferedOutputStream(connection.
-                    getOutputStream());
+            // getting localhost ip
+            InetAddress ip = InetAddress.getByName(host);
 
-            /** Instantiate an OutputStreamWriter object with the optional character
-             * encoding.
-             */
-            OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF8");
-            TimeStamp = new java.util.Date().toString();
-            String process = "Calling the Socket Server on "+ host + " port " + port +
-                    " at " + TimeStamp +  (char) 13;
+            // establish the connection with server port 5056
+            Socket s = new Socket(ip, port);
 
-            /** Write across the socket connection and flush the buffer */
-            osw.write(process);
-            osw.flush();
-            /** Instantiate a BufferedInputStream object for reading
-             /** Instantiate a BufferedInputStream object for reading
-             * incoming socket streams.
-             */
+            // obtaining input and out streams
+            DataInputStream dis = new DataInputStream(s.getInputStream());
+            DataOutputStream dos = new DataOutputStream(s.getOutputStream());
 
-            BufferedInputStream bis = new BufferedInputStream(connection.
-                    getInputStream());
-            /**Instantiate an InputStreamReader with the optional
-             * character encoding.
-             */
+            // the following loop performs the exchange of
+            // information between client and client handler
+            while (true) {
+                System.out.println(dis.readUTF());
+                String tosend = scn.nextLine();
+                dos.writeUTF(tosend);
 
-            InputStreamReader isr = new InputStreamReader(bis, "US-ASCII");
+                // If client sends exit,close this connection
+                // and then break from the while loop
+                if(tosend.equals("Exit"))
+                {
+                    System.out.println("Closing this connection : " + s);
+                    s.close();
+                    System.out.println("Connection closed");
+                    break;
+                }
 
-            /**Read the socket's InputStream and append to a StringBuffer */
-            int c;
-            while ( (c = isr.read()) != 13)
-                instr.append( (char) c);
+                // printing date or time as requested by client
+                String received = dis.readUTF();
+                System.out.println(received);
+            }
 
-            /** Close the socket connection. */
-            connection.close();
-            System.out.println(instr);
-        }
-        catch (IOException f) {
-            System.out.println("IOException: " + f);
-        }
-        catch (Exception g) {
-            System.out.println("Exception: " + g);
+            // closing resources
+            scn.close();
+            dis.close();
+            dos.close();
+        }catch(Exception e){
+            e.printStackTrace();
         }
     }
 }
