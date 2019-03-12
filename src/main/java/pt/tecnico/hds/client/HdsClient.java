@@ -18,9 +18,9 @@ public class HdsClient {
             jo.put("Good", cmds[1]);
             jo.put("Seller", _name);
         }
-        /*else {
+        else {
             jo.put("Action", "Invalid command");
-        }*/
+        }
         return jo;
     }
 
