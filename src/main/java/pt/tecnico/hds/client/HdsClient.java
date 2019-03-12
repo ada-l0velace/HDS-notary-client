@@ -10,46 +10,30 @@ public class HdsClient {
         _port = port;
     }
 
-    private JSONObject intentionToSell(String command) {
+    private JSONObject actionGoodSeller(String command, String s) {
         String [] cmds = command.split(" ");
         JSONObject jo = new JSONObject();
         if (cmds.length == 2) {
             jo.put("Action", cmds[0]);
             jo.put("Good", cmds[1]);
-            jo.put("Seller", _name);
+            jo.put(s, _name);
         }
         else {
             jo.put("Action", "Invalid command");
         }
         return jo;
+    }
+
+    private JSONObject intentionToSell(String command) {
+        return actionGoodSeller(command, "Seller");
     }
 
     private JSONObject getStateOfGood(String command) {
-        String [] cmds = command.split(" ");
-        JSONObject jo = new JSONObject();
-        if (cmds.length == 2) {
-            jo.put("Action", cmds[0]);
-            jo.put("Good", cmds[1]);
-            jo.put("Buyer", _name);
-        }
-        else {
-            jo.put("Action", "Invalid command");
-        }
-        return jo;
+        return actionGoodSeller(command, "Buyer");
     }
 
     private JSONObject buyGood(String command) {
-        String [] cmds = command.split(" ");
-        JSONObject jo = new JSONObject();
-        if (cmds.length == 2) {
-            jo.put("Action", cmds[0]);
-            jo.put("Good", cmds[1]);
-            jo.put("Buyer", _name);
-        }
-        else {
-            jo.put("Action", "Invalid command");
-        }
-        return jo;
+        return actionGoodSeller(command, "Buyer");
     }
 
     private JSONObject transferGood(String command) {
