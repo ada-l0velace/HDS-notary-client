@@ -12,6 +12,9 @@ public class Main {
         String host = "localhost";
         /** Define a port */
         int port = 19999;
+
+        HdsClient client = new HdsClient("user1", 4000);
+
         try
         {
             Scanner scn = new Scanner(System.in);
@@ -28,31 +31,36 @@ public class Main {
 
             // the following loop performs the exchange of
             // information between client and client handler
+
             while (true) {
-                System.out.println(dis.readUTF());
-                String tosend = scn.nextLine();
-                dos.writeUTF(tosend);
+                try {
+                    System.out.println(dis.readUTF());
+                    String tosend = scn.nextLine();
+                    dos.writeUTF(client.sendJson(tosend));
 
-                // If client sends exit,close this connection
-                // and then break from the while loop
-                if(tosend.equals("Exit"))
-                {
-                    System.out.println("Closing this connection : " + s);
-                    s.close();
-                    System.out.println("Connection closed");
-                    break;
+                    // If client sends exit,close this connection
+                    // and then break from the while loop
+                    if (tosend.equals("Exit")) {
+                        System.out.println("Closing this connection : " + s);
+                        s.close();
+                        System.out.println("Connection closed");
+                        break;
+                    }
+
+                    // printing date or time as requested by client
+                    String received = dis.readUTF();
+                    System.out.println(received);
                 }
-
-                // printing date or time as requested by client
-                String received = dis.readUTF();
-                System.out.println(received);
+                catch (Exception e) {
+                    continue;
+                }
             }
 
             // closing resources
             scn.close();
             dis.close();
             dos.close();
-        }catch(Exception e){
+        }catch(IOException e){
             e.printStackTrace();
         }
     }
