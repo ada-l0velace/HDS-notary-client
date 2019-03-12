@@ -66,11 +66,10 @@ public class HdsClient {
                         s.close();
                         connectToClient(host, 4000, jo);
                         break;
-                    } else {
-                        dos.writeUTF(this.sendJson(tosend).toString());
                     }
-
-
+                    String out = this.sendJson(tosend).toString();
+                    dos.writeUTF(out);
+                    System.out.println(s.toString() + " "+ out);
                     // printing date or time as requested by client
                     String received = dis.readUTF();
                     System.out.println(received);
@@ -89,10 +88,7 @@ public class HdsClient {
     }
 
     public void connectToClient(String host, int port, JSONObject jo) {
-        try
-        {
-            Boolean clientConnection = false;
-            //Scanner scn = new Scanner(System.in);
+        try {
 
             // getting localhost ip
             InetAddress ip = InetAddress.getByName(host);
@@ -115,28 +111,14 @@ public class HdsClient {
                     // printing date or time as requested by client
                     String received = dis.readUTF();
                     System.out.println(received);
-                    if (received.equals("Exit")) {
-                        System.out.println("Closing this connection : " + s);
-                        System.out.println("Connection closed");
-                        //dos.writeUTF("Exit");
-                        s.close();
-                        dis.close();
-                        dos.close();
 
-                        //JSONObject j0 = sendJson("transferGood "+ jo.getString("Good") + " " + jo.getString("Buyer"));
-                        //System.out.println(j0.toString());
-                        //connectToClient(host, 19999, j0);
-                        break;
-                    }
-                    else {
-                        System.out.println("Closing this connection : " + s);
-                        System.out.println("Connection closed");
-                        dos.writeUTF("Exit");
-                        dis.close();
-                        dos.close();
-                        s.close();
-                        connectToServer(host, 19999);
-                    }
+                    System.out.println("Closing this connection : " + s);
+                    //dos.writeUTF("Exit");
+                    s.close();
+                    dis.close();
+                    dos.close();
+                    connectToServer(host, 19999);
+                    break;
 
                 }
                 catch (Exception e) {
@@ -147,7 +129,7 @@ public class HdsClient {
             //s.close();
             // closing resources
 
-        }catch(IOException e){
+        } catch(IOException e){
             e.printStackTrace();
         }
     }
