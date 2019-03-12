@@ -12,6 +12,7 @@ public class HdsServerClient implements Runnable {
 
     HdsServerClient(Socket s, int i, DataInputStream dis, DataOutputStream dos) {
         this.connection = s;
+
         this.ID = i;
         this.dis = dis;
         this.dos = dos;
@@ -70,7 +71,7 @@ public class HdsServerClient implements Runnable {
                 }
             }
             catch (java.net.SocketException socketEx) {
-                socketEx.printStackTrace();
+                //socketEx.printStackTrace();
                 //Thread.currentThread().interrupt();
                 break;
             }

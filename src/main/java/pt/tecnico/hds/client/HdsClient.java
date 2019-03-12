@@ -55,6 +55,7 @@ public class HdsClient {
                         dos.close();
                         dis.close();
                         s.close();
+                        System.exit(0);
                         break;
                     }
                     //System.out.println(tosend);
@@ -95,7 +96,7 @@ public class HdsClient {
 
             // establish the connection with server port 5056
             Socket s = new Socket(ip, port);
-
+            s.setSoTimeout(10*1000);
             // obtaining input and out streams
             DataInputStream dis = new DataInputStream(s.getInputStream());
             DataOutputStream dos = new DataOutputStream(s.getOutputStream());
@@ -121,8 +122,16 @@ public class HdsClient {
                     break;
 
                 }
+                catch (java.net.SocketTimeoutException timeout) {
+                    //timeout.printStackTrace();
+                    break;
+                }
+                catch (java.io.EOFException e0) {
+                    //e0.printStackTrace();
+                    break;
+                }
                 catch (Exception e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                     break;
                 }
             }
