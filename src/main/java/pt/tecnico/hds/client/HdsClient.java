@@ -10,7 +10,6 @@ import java.util.Scanner;
 public class HdsClient {
     private String _name;
     private int _port;
-
     HdsClient(String name, int port) {
         _name = name;
         _port = port;
@@ -21,6 +20,7 @@ public class HdsClient {
         Runnable runnable = new HdsServerClientStarter(_port);
         Thread thread = new Thread(runnable);
         thread.start();
+
     }
 
     public void connectToServer(String host, int port) {
@@ -51,30 +51,25 @@ public class HdsClient {
 
                     tosend = scn.nextLine();
 
+                    if (tosend.equals("Exit")) {
+                        dos.close();
+                        dis.close();
+                        s.close();
+                        break;
+                    }
                     //System.out.println(tosend);
 
                     JSONObject jo = this.sendJson(tosend);
                     if (jo.getString("Action").equals("buyGood")) {
-                        dos.writeUTF("Exit");
-                        tosend = "Exit";
-                        clientConnection = true;
+                        dos.close();
+                        dis.close();
+                        s.close();
+                        connectToClient(host, 4000, jo);
+                        break;
                     } else {
                         dos.writeUTF(this.sendJson(tosend).toString());
                     }
-                    // If client sends exit,close this connection
-                    // and then break from the while loop
-                    if (tosend.equals("Exit")) {
-                        System.out.println("Closing this connection : " + s);
 
-                        System.out.println("Connection closed");
-                        if (clientConnection) {
-                            dos.close();
-                            dis.close();
-                            s.close();
-                            connectToClient(host, 4000, jo);
-                        }
-                        break;
-                    }
 
                     // printing date or time as requested by client
                     String received = dis.readUTF();
@@ -90,6 +85,7 @@ public class HdsClient {
         }catch(IOException e){
             e.printStackTrace();
         }
+
     }
 
     public void connectToClient(String host, int port, JSONObject jo) {
@@ -113,6 +109,7 @@ public class HdsClient {
 
             while (true) {
                 try {
+                    System.out.println("Client " + s + " sends " + jo.toString());
                     dos.writeUTF(jo.toString());
                     //System.out.println("WTF");
                     // printing date or time as requested by client
@@ -121,18 +118,20 @@ public class HdsClient {
                     if (received.equals("Exit")) {
                         System.out.println("Closing this connection : " + s);
                         System.out.println("Connection closed");
-                        dos.writeUTF("Exit");
+                        //dos.writeUTF("Exit");
+                        s.close();
                         dis.close();
                         dos.close();
-                        s.close();
-                        JSONObject j0 = sendJson("transferGood "+ jo.getString("Good") + " " + jo.getString("Buyer"));
-                        System.out.println(j0.toString());
-                        connectToClient(host, 19999, j0);
+
+                        //JSONObject j0 = sendJson("transferGood "+ jo.getString("Good") + " " + jo.getString("Buyer"));
+                        //System.out.println(j0.toString());
+                        //connectToClient(host, 19999, j0);
                         break;
                     }
                     else {
                         System.out.println("Closing this connection : " + s);
                         System.out.println("Connection closed");
+                        dos.writeUTF("Exit");
                         dis.close();
                         dos.close();
                         s.close();

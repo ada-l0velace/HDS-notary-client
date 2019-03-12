@@ -55,16 +55,9 @@ public class HdsServerClient implements Runnable {
                 toreturn = jsonObj.toString();
                 switch (received) {
                     case "buyGood" :
-                        //toreturn = "buyGood";
                         dos.writeUTF("Exit");
-                        /*connection.setSoLinger(true,0);
-                        connection.close();
-                        System.out.println("Closing this connection.");
-                        System.out.println("Connection closed");
-                        this.dis.close();
-                        this.dos.close();
-                        */
-                        //Main.client.connectToServer("localhost", 19999);
+                        JSONObject j0 = Main.client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"));
+                        Main.client.connectToClient("localhost", 19999, j0);
                         break;
 
                     default:
