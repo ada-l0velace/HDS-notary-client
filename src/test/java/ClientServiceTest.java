@@ -1,5 +1,3 @@
-package pt.tecnico.hds.client.integration;
-
 import static org.junit.Assume.*;
 import org.dbunit.*;
 import org.dbunit.database.DatabaseConnection;
@@ -150,6 +148,68 @@ public class ClientServiceTest extends DatabaseTestCase {
     }
 
     @Test
+    public void testIntentionToSellOutputSuccess() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        insert("good30", "user30");
+
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("Action","intentionToSell");
+        jsonObj.put("Good","good30");
+        jsonObj.put("Seller","user30");
+        Assert.assertEquals("YES", sendTo("localhost", 19999, jsonObj.toString()));
+    }
+
+    @Test
+    public void testIntentionToSellOutputFailure() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        insert("good30", "user30");
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("Action","intentionToSell");
+        jsonObj.put("Good","good30");
+        jsonObj.put("Seller","user1");
+        Assert.assertEquals("NO", sendTo("localhost", 19999, jsonObj.toString()));
+    }
+
+    @Test
+    public void testIntentionToSellDatabaseSuccess() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        insert("good30", "user30");
+
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("Action","intentionToSell");
+        jsonObj.put("Good","good30");
+        jsonObj.put("Seller","user30");
+        sendTo("localhost", 19999, jsonObj.toString());
+
+        JSONObject jsonObj2 = new JSONObject();
+        jsonObj2.put("Action","getStateOfGood");
+        jsonObj2.put("Good","good30");
+        jsonObj2.put("Buyer","user30");
+
+        Assert.assertEquals("{'Owner':'user30','Good':'good30' ,'OnSale': 'True'}", sendTo("localhost", 19999, jsonObj2.toString()));
+    }
+
+    @Test
+    public void testIntentionToSellDatabaseFailure() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        insert("good30", "user30");
+
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("Action","intentionToSell");
+        jsonObj.put("Good","good30");
+        jsonObj.put("Seller","user1");
+
+        //Assert.assertEquals("NO", sendTo("localhost", 19999, jsonObj.toString()));
+        sendTo("localhost", 19999, jsonObj.toString());
+        JSONObject jsonObj2 = new JSONObject();
+        jsonObj2.put("Action","getStateOfGood");
+        jsonObj2.put("Good","good30");
+        jsonObj2.put("Buyer","user30");
+
+        Assert.assertEquals("{'Owner':'user1','Good':'good30' ,'OnSale': 'False'}", sendTo("localhost", 19999, jsonObj2.toString()));
+    }
+
+    @Test
     public void testBuyGoodSuccess() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         HdsClient h = new HdsClient("user1", 3999+ 1);
@@ -161,6 +221,20 @@ public class ClientServiceTest extends DatabaseTestCase {
         jsonObj.put("Buyer","user30");
         Assert.assertEquals("YES", sendTo("localhost", 4000, jsonObj.toString()));
     }
+
+    @Test
+    public void testBuyGoodFailure() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        HdsClient h = new HdsClient("user1", 3999+ 1);
+        insert("good30", "user30");
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("Action","buyGood");
+        jsonObj.put("Good","good30");
+        jsonObj.put("Buyer","user30");
+        Assert.assertEquals("NO", sendTo("localhost", 4000, jsonObj.toString()));
+    }
+
+
 
 }
 
