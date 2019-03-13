@@ -7,9 +7,9 @@ import java.util.Scanner;
 
 public class Main {
 
-    static HdsClient  client;
+
     public static void main(String[] args) {
-        client = new HdsClient("user"+args[0], 3999+ Integer.parseInt(args[0]));
+        HdsClient client = new HdsClient("user"+args[0], 3999+ Integer.parseInt(args[0]));
         client.connectToServer("localhost", 19999);
     }
 }

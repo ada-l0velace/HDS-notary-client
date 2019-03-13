@@ -9,10 +9,11 @@ public class HdsServerClient implements Runnable {
     private int ID;
     private DataInputStream dis;
     private DataOutputStream dos;
+    private HdsClient _client;
 
-    HdsServerClient(Socket s, int i, DataInputStream dis, DataOutputStream dos) {
+    HdsServerClient(Socket s, int i, DataInputStream dis, DataOutputStream dos, HdsClient client) {
         this.connection = s;
-
+        this._client = client;
         this.ID = i;
         this.dis = dis;
         this.dos = dos;
@@ -32,7 +33,7 @@ public class HdsServerClient implements Runnable {
                 // receive the answer from client
                 received = dis.readUTF();
 
-                if (received.equals("Exit")) {
+                /*if (received.equals("Exit")) {
                     System.out.println("Client " + this.connection + " sends exit...");
                     System.out.println("Closing this connection.");
                     this.connection.close();
@@ -41,7 +42,7 @@ public class HdsServerClient implements Runnable {
                     this.dos.close();
                     //Thread.currentThread().interrupt();
                     break;
-                }
+                }*/
 
                 this.TimeStamp = new java.util.Date().toString();
 
@@ -53,13 +54,14 @@ public class HdsServerClient implements Runnable {
                 else
                     received = "";*/
                 received = jsonObj.get("Action").toString();
-                toreturn = jsonObj.toString();
+                //toreturn = jsonObj.toString();
                 switch (received) {
                     case "buyGood" :
-                        //dos.writeUTF("Exit");
-                        JSONObject j0 = Main.client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"));
-                        Main.client.connectToClient("localhost", 19999, j0);
-                        System.out.println("Client " + this.connection + " sends exit...");
+                        JSONObject j0 = _client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"));
+                        String answer = _client.connectToClient("localhost", 19999, j0);
+                        dos.writeUTF(answer);
+                        //Thread.sleep(1000);
+                        System.out.println("Client " + this.connection + " disconnecting");
                         this.connection.close();
                         this.dis.close();
                         this.dos.close();
@@ -83,9 +85,9 @@ public class HdsServerClient implements Runnable {
                 catch (IOException e1) {
                     e1.printStackTrace();
                 }
+                break;
             }
         }
-        //Main.client.connectToServer("localhost", 19999);
 
     }
 

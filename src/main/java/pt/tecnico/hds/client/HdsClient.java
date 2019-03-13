@@ -17,7 +17,7 @@ public class HdsClient {
     }
 
     private void startServer() {
-        Runnable runnable = new HdsServerClientStarter(_port);
+        Runnable runnable = new HdsServerClientStarter(_port, this);
         Thread thread = new Thread(runnable);
         thread.start();
 
@@ -62,11 +62,8 @@ public class HdsClient {
 
                     JSONObject jo = this.sendJson(tosend);
                     if (jo.getString("Action").equals("buyGood")) {
-                        dos.close();
-                        dis.close();
-                        s.close();
                         connectToClient(host, 4000, jo);
-                        break;
+                        continue;
                     }
                     String out = this.sendJson(tosend).toString();
                     dos.writeUTF(out);
@@ -88,7 +85,8 @@ public class HdsClient {
 
     }
 
-    public void connectToClient(String host, int port, JSONObject jo) {
+    public String connectToClient(String host, int port, JSONObject jo) {
+        String answer = "";
         try {
 
             // getting localhost ip
@@ -104,43 +102,39 @@ public class HdsClient {
             // the following loop performs the exchange of
             // information between client and client handler
 
-            while (true) {
-                try {
-                    System.out.println("Client " + s + " sends " + jo.toString());
-                    dos.writeUTF(jo.toString());
-                    //System.out.println("WTF");
-                    // printing date or time as requested by client
-                    String received = dis.readUTF();
-                    System.out.println(received);
 
-                    System.out.println("Closing this connection : " + s);
-                    //dos.writeUTF("Exit");
-                    s.close();
-                    dis.close();
-                    dos.close();
-                    connectToServer(host, 19999);
-                    break;
+            try {
+                System.out.println("Client " + s + " sends " + jo.toString());
+                dos.writeUTF(jo.toString());
+                String received = dis.readUTF();
+                if(port != 19999)
+                    dos.writeUTF(received);
+                answer = received;
+                s.close();
+                dis.close();
+                dos.close();
 
-                }
-                catch (java.net.SocketTimeoutException timeout) {
-                    //timeout.printStackTrace();
-                    break;
-                }
-                catch (java.io.EOFException e0) {
-                    //e0.printStackTrace();
-                    break;
-                }
-                catch (Exception e) {
-                    //e.printStackTrace();
-                    break;
-                }
             }
+            catch (java.net.SocketTimeoutException timeout) {
+                timeout.printStackTrace();
+                //break;
+            }
+            catch (java.io.EOFException e0) {
+                e0.printStackTrace();
+                //break;
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                //break;
+            }
+
             //s.close();
             // closing resources
 
         } catch(IOException e){
             e.printStackTrace();
         }
+        return answer;
     }
 
     private JSONObject actionGoodSeller(String command, String s) {
