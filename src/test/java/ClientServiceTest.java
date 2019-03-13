@@ -1,6 +1,6 @@
 package pt.tecnico.hds.client.integration;
 
-
+import static org.junit.Assume.*;
 import org.dbunit.*;
 import org.dbunit.database.DatabaseConnection;
 import org.dbunit.database.IDatabaseConnection;
@@ -11,12 +11,16 @@ import org.dbunit.operation.DatabaseOperation;
 import org.json.JSONObject;
 import org.junit.*;
 import pt.tecnico.hds.client.HdsClient;
-
+import org.junit.runner.RunWith;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.sql.*;
+import java.net.ConnectException;
+
+import static com.sun.org.apache.xerces.internal.util.PropertyState.is;
+import static org.mockito.Matchers.notNull;
 
 public class ClientServiceTest extends DatabaseTestCase {
     public static final String TABLE_LOGIN = "salarydetails";
@@ -92,6 +96,20 @@ public class ClientServiceTest extends DatabaseTestCase {
 
     }
 
+    public Boolean serverIsUp() {
+        try {
+            Socket s = new Socket("localhost", 19999);
+            s.close();
+            return true;
+        }
+        catch (ConnectException e) {
+            return false;
+        }
+        catch (Exception e) {
+            return false;
+        }
+    }
+
     public String update(String goodsId) throws Exception {
         String sql = "UPDATE notary SET onSale = ? WHERE goodsId = ?";
 
@@ -110,6 +128,7 @@ public class ClientServiceTest extends DatabaseTestCase {
 
     @Test
     public void testIsNotForSale() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("Action","getStateOfGood");
@@ -120,6 +139,7 @@ public class ClientServiceTest extends DatabaseTestCase {
 
     @Test
     public void testIsForSale() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
         update("good30");
         JSONObject jsonObj = new JSONObject();
@@ -131,6 +151,7 @@ public class ClientServiceTest extends DatabaseTestCase {
 
     @Test
     public void testBuyGoodSuccess() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
         HdsClient h = new HdsClient("user1", 3999+ 1);
         insert("good30", "user30");
         update("good30");
@@ -140,5 +161,8 @@ public class ClientServiceTest extends DatabaseTestCase {
         jsonObj.put("Buyer","user30");
         Assert.assertEquals("YES", sendTo("localhost", 4000, jsonObj.toString()));
     }
+
 }
+
+
 

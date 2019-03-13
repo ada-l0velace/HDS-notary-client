@@ -25,36 +25,16 @@ public class HdsServerClient implements Runnable {
         System.out.println("Client " + this.connection + " Opens...");
         while (true) {
             try {
-
-                // Ask user what he wants
-                //dos.writeUTF("What do you want?[buyGood]..\n" +
-                //        "Type Exit to terminate connection.");
-
                 // receive the answer from client
                 received = dis.readUTF();
-
-                /*if (received.equals("Exit")) {
-                    System.out.println("Client " + this.connection + " sends exit...");
-                    System.out.println("Closing this connection.");
-                    this.connection.close();
-                    System.out.println("Connection closed");
-                    this.dis.close();
-                    this.dos.close();
-                    //Thread.currentThread().interrupt();
-                    break;
-                }*/
 
                 this.TimeStamp = new java.util.Date().toString();
 
                 // write on output stream based on the
                 // answer from the client
                 JSONObject jsonObj = new JSONObject(received);
-                /*if (jsonObj.isNull("Action"))
-                    received = jsonObj.get("Action").toString();
-                else
-                    received = "";*/
                 received = jsonObj.get("Action").toString();
-                //toreturn = jsonObj.toString();
+
                 switch (received) {
                     case "buyGood" :
                         JSONObject j0 = _client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"));
