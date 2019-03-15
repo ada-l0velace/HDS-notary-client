@@ -33,7 +33,8 @@ public class HdsServerClient implements Runnable {
                 // write on output stream based on the
                 // answer from the client
                 JSONObject jsonObj = new JSONObject(received);
-                received = jsonObj.get("Action").toString();
+                jsonObj = new JSONObject(jsonObj.getString("Message"));
+                received = jsonObj.getString("Action");
 
                 switch (received) {
                     case "buyGood" :

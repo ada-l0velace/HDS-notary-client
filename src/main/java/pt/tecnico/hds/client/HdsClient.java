@@ -9,7 +9,7 @@ import java.util.Scanner;
 
 public class HdsClient {
     private String _name;
-    private int _port;
+    public int _port;
     public HdsClient(String name, int port) {
         _name = name;
         _port = port;
@@ -61,10 +61,12 @@ public class HdsClient {
                     //System.out.println(tosend);
 
                     JSONObject jo = this.sendJson(tosend);
-                    if (jo.getString("Action").equals("buyGood")) {
+
+                    if (new JSONObject(jo.getString("Message")).getString("Action").equals("buyGood")) {
                         connectToClient(host, 4000, jo);
                         continue;
                     }
+
                     String out = this.sendJson(tosend).toString();
                     dos.writeUTF(out);
                     System.out.println(s.toString() + " "+ out);
@@ -179,20 +181,36 @@ public class HdsClient {
     }
 
     public JSONObject sendJson(String command) {
+        JSONObject finalMessage = new JSONObject();
         if (command.startsWith("transferGood")) {
-           return transferGood(command);
+            String message = transferGood(command).toString();
+            finalMessage.put("Message", message);
+            finalMessage.put("Hash", Utils.getSHA256(message));
+            return finalMessage;
         }
         else if (command.startsWith("intentionToSell")) {
-            return intentionToSell(command);
+            String message = intentionToSell(command).toString();
+            finalMessage.put("Message", message);
+            finalMessage.put("Hash", Utils.getSHA256(message));
+            return finalMessage;
         }
         else if (command.startsWith("getStateOfGood")) {
-            return getStateOfGood(command);
+            String message = getStateOfGood(command).toString();
+            finalMessage.put("Message", message);
+            finalMessage.put("Hash", Utils.getSHA256(message));
+            return finalMessage;
         }
         else if (command.startsWith("buyGood")) {
-            return buyGood(command);
+            String message = buyGood(command).toString();
+            finalMessage.put("Message", message);
+            finalMessage.put("Hash", Utils.getSHA256(message));
+            return finalMessage;
         }
+
         JSONObject jo = new JSONObject();
         jo.put("Action", "Invalid command");
-        return jo;
+        finalMessage.put("Message", jo.toString());
+        finalMessage.put("Hash", Utils.getSHA256(jo.toString()));
+        return finalMessage;
     }
 }
