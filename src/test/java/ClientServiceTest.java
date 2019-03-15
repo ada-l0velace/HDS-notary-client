@@ -187,6 +187,15 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cSeller = new HdsClient("user30", 3999+30);
 
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
+
+        String serverAnswer = sendTo("localhost", serverPort, sendTo("localhost", serverPort, jsonObj.toString()));
+
+        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("YES", jsonObj.getString("Action"));
+
         Assert.assertEquals("YES", sendTo("localhost", serverPort, jsonObj.toString()));
     }
 
@@ -197,8 +206,15 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cSeller = new HdsClient("user1", 3999+1);
 
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
-        //System.out.println(jsonObj.toString());
-        Assert.assertEquals("NO", sendTo("localhost", serverPort, jsonObj.toString()));
+
+        String serverAnswer = sendTo("localhost", serverPort, sendTo("localhost", serverPort, jsonObj.toString()));
+
+        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("User doesn't own this good.","NO", jsonObj.getString("Action"));
+
     }
 
     @Test
@@ -212,7 +228,8 @@ public class ClientServiceTest extends DatabaseTestCase {
 
         JSONObject jsonObj2 = cBuyer.sendJson("getStateOfGood good30"); //new JSONObject();
         String serverAnswer = sendTo("localhost", serverPort, jsonObj2.toString());
-        Assert.assertTrue("The server answer is not valid json.",isJSONValid(serverAnswer));
+        String example = "{\"Message\": \"{\"Owner\":\"user1\",\"Good\":\"good1\",\"OnSale\":\"true\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
 
         jsonObj = new JSONObject(serverAnswer);
         jsonObj = new JSONObject(jsonObj.getString("Message"));
@@ -239,7 +256,8 @@ public class ClientServiceTest extends DatabaseTestCase {
 
         String serverAnswer = sendTo("localhost", serverPort, jsonObj2.toString());
 
-        Assert.assertTrue("The server answer is not valid json.",isJSONValid(serverAnswer));
+        String example = "{\"Message\": \"{\"Owner\":\"user1\",\"Good\":\"good1\",\"OnSale\":\"true\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
         jsonObj = new JSONObject(serverAnswer);
         jsonObj = new JSONObject(jsonObj.getString("Message"));
 
@@ -257,7 +275,14 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient h = new HdsClient("user30", port);
         insert("good30", "user30");
         update("good30");
-        Assert.assertEquals("Users can't buy their own goods.","YES", sendTo("localhost", port, h.sendJson("buyGood good30").toString()));
+
+        String serverAnswer = sendTo("localhost", port, h.sendJson("buyGood good30").toString());
+
+        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("Users can't buy their own goods.","NO", jsonObj.getString("Action"));
     }
 
     @Test
@@ -272,7 +297,15 @@ public class ClientServiceTest extends DatabaseTestCase {
 
         insert("good30", seller);
         update("good30");
-        Assert.assertEquals("YES", sendTo("localhost", portSeller, cBuyer.sendJson("buyGood good30").toString()));
+
+        String serverAnswer = sendTo("localhost", portSeller, cBuyer.sendJson("buyGood good30").toString());
+
+        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("YES", jsonObj.getString("Action"));
+
     }
 
     @Test
@@ -285,7 +318,14 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
         HdsClient cSeller = new HdsClient(seller, portSeller);
         insert("good30", seller);
-        Assert.assertEquals("The good was not for sale.","NO", sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30").toString()));
+
+        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30").toString());
+
+        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("The good was not for sale.","NO", jsonObj.getString("Action"));
     }
 
     @Test
@@ -298,7 +338,13 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
         HdsClient cSeller = new HdsClient(seller, portSeller);
         insert("good25", seller);
-        Assert.assertEquals("This good does not exist.","NO", sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30").toString()));
+        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30").toString());
+
+        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("The good does not exist","NO", jsonObj.getString("Action"));
     }
 
     @Test
@@ -309,7 +355,13 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cSeller = new HdsClient("user30", 3999+30);
         JSONObject j = cBuyer.sendJson("buyGood good30");
         j.put("Buyer","user33");
-        Assert.assertEquals("NO", sendTo("localhost", cSeller._port, j.toString()));
+        String serverAnswer = sendTo("localhost", cSeller._port, j.toString());
+
+        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("The Buyer does not exist","NO", jsonObj.getString("Action"));
     }
 
 }
