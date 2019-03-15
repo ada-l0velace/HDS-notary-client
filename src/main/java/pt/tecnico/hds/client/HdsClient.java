@@ -109,8 +109,10 @@ public class HdsClient {
                 System.out.println("Client " + s + " sends " + jo.toString());
                 dos.writeUTF(jo.toString());
                 String received = dis.readUTF();
-                if(port != 19999)
+                /*if(port != 19999) {
+                    System.out.println("Client " + s + " sends " + received);
                     dos.writeUTF(received);
+                }*/
                 answer = received;
                 s.close();
                 dis.close();
@@ -180,31 +182,37 @@ public class HdsClient {
         return jo;
     }
 
+    public JSONObject buildFinalMessage(String message, JSONObject finalMessage) {
+        finalMessage.put("Message", message);
+        finalMessage.put("Hash", Utils.getSHA256(message));
+        return finalMessage;
+    }
+
     public JSONObject sendJson(String command) {
         JSONObject finalMessage = new JSONObject();
         if (command.startsWith("transferGood")) {
-            String message = transferGood(command).toString();
-            finalMessage.put("Message", message);
-            finalMessage.put("Hash", Utils.getSHA256(message));
-            return finalMessage;
+            JSONObject jCommand = transferGood(command);
+            jCommand.put("Timestamp", new java.util.Date().toString());
+            String message = jCommand.toString();
+            return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("intentionToSell")) {
-            String message = intentionToSell(command).toString();
-            finalMessage.put("Message", message);
-            finalMessage.put("Hash", Utils.getSHA256(message));
-            return finalMessage;
+            JSONObject jCommand = intentionToSell(command);
+            jCommand.put("Timestamp", new java.util.Date().toString());
+            String message = jCommand.toString();
+            return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("getStateOfGood")) {
-            String message = getStateOfGood(command).toString();
-            finalMessage.put("Message", message);
-            finalMessage.put("Hash", Utils.getSHA256(message));
-            return finalMessage;
+            JSONObject jCommand = getStateOfGood(command);
+            jCommand.put("Timestamp", new java.util.Date().toString());
+            String message = jCommand.toString();
+            return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("buyGood")) {
-            String message = buyGood(command).toString();
-            finalMessage.put("Message", message);
-            finalMessage.put("Hash", Utils.getSHA256(message));
-            return finalMessage;
+            JSONObject jCommand = buyGood(command);
+            jCommand.put("Timestamp", new java.util.Date().toString());
+            String message = jCommand.toString();
+            return buildFinalMessage(message, finalMessage);
         }
 
         JSONObject jo = new JSONObject();

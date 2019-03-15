@@ -23,52 +23,53 @@ public class HdsServerClient implements Runnable {
         String received;
         String toreturn;
         System.out.println("Client " + this.connection + " Opens...");
-        while (true) {
-            try {
-                // receive the answer from client
-                received = dis.readUTF();
+        //while (true) {
+        try {
+            // receive the answer from client
+            received = dis.readUTF();
 
-                this.TimeStamp = new java.util.Date().toString();
+            this.TimeStamp = new java.util.Date().toString();
 
-                // write on output stream based on the
-                // answer from the client
-                JSONObject jsonObj = new JSONObject(received);
-                jsonObj = new JSONObject(jsonObj.getString("Message"));
-                received = jsonObj.getString("Action");
+            // write on output stream based on the
+            // answer from the client
+            JSONObject jsonObj = new JSONObject(received);
+            jsonObj = new JSONObject(jsonObj.getString("Message"));
+            received = jsonObj.getString("Action");
 
-                switch (received) {
-                    case "buyGood" :
-                        JSONObject j0 = _client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"));
-                        String answer = _client.connectToClient("localhost", 19999, j0);
-                        dos.writeUTF(answer);
-                        //Thread.sleep(1000);
-                        System.out.println("Client " + this.connection + " disconnecting");
-                        this.connection.close();
-                        this.dis.close();
-                        this.dos.close();
-                        break;
+            switch (received) {
+                case "buyGood" :
+                    JSONObject j0 = _client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"));
+                    String answer = _client.connectToClient("localhost", 19999, j0);
+                    System.out.println(connection+" "+ answer);
+                    dos.writeUTF(answer);
+                    //Thread.sleep(1000);
+                    System.out.println("Client " + this.connection + " disconnecting");
+                    break;
 
-                    default:
-                        dos.writeUTF("Invalid input");
-                        break;
-                }
-            }
-            catch (java.net.SocketException socketEx) {
-                //socketEx.printStackTrace();
-                //Thread.currentThread().interrupt();
-                break;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                try {
+                default:
                     dos.writeUTF("Invalid input");
-                }
-                catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-                break;
+                    break;
             }
+            this.connection.close();
+            this.dis.close();
+            this.dos.close();
         }
+        catch (java.net.SocketException socketEx) {
+            socketEx.printStackTrace();
+            //Thread.currentThread().interrupt();
+            //break;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            try {
+                dos.writeUTF("Invalid input");
+            }
+            catch (IOException e1) {
+                e1.printStackTrace();
+            }
+            //break;
+        }
+        //}
 
     }
 
