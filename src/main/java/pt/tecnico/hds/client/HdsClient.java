@@ -5,28 +5,36 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class HdsClient {
-    private String _name;
+    public String _name;
     public int _port;
+    private Map<String,Integer> _myMap = new HashMap<String,Integer>();
     public HdsClient(String name, int port) {
         _name = name;
         _port = port;
+        initUsers();
         startServer();
+    }
+
+    private void initUsers() {
+        for (int i = 1; i <=10;i++) {
+            _myMap.put("user"+i,3999+i);
+        }
+        //System.out.println(_myMap);
     }
 
     private void startServer() {
         Runnable runnable = new HdsServerClientStarter(_port, this);
         Thread thread = new Thread(runnable);
         thread.start();
-
     }
 
     public void connectToServer(String host, int port) {
-        try
-        {
-            Boolean clientConnection = false;
+        try {
             Scanner scn = new Scanner(System.in);
 
             // getting localhost ip
@@ -63,7 +71,9 @@ public class HdsClient {
                     JSONObject jo = this.sendJson(tosend);
 
                     if (new JSONObject(jo.getString("Message")).getString("Action").equals("buyGood")) {
-                        connectToClient(host, 4000, jo);
+
+                        int clientPort = _myMap.get(tosend.split(" ")[2]);
+                        connectToClient(host, clientPort, jo);
                         continue;
                     }
 
@@ -109,6 +119,7 @@ public class HdsClient {
                 System.out.println("Client " + s + " sends " + jo.toString());
                 dos.writeUTF(jo.toString());
                 String received = dis.readUTF();
+                System.out.println(received);
                 /*if(port != 19999) {
                     System.out.println("Client " + s + " sends " + received);
                     dos.writeUTF(received);
@@ -155,6 +166,22 @@ public class HdsClient {
         return jo;
     }
 
+    private JSONObject actionBuyGood(String command, String s) {
+        String [] cmds = command.split(" ");
+        JSONObject jo = new JSONObject();
+        System.out.println(cmds.length);
+        String seller = cmds[2];
+        if (cmds.length == 3 && _myMap.containsKey(seller)) {
+            jo.put("Action", cmds[0]);
+            jo.put("Good", cmds[1]);
+            jo.put(s, _name);
+        }
+        else {
+            jo.put("Action", "Invalid command");
+        }
+        return jo;
+    }
+
     private JSONObject intentionToSell(String command) {
         return actionGoodSeller(command, "Seller");
     }
@@ -164,7 +191,7 @@ public class HdsClient {
     }
 
     private JSONObject buyGood(String command) {
-        return actionGoodSeller(command, "Buyer");
+        return actionBuyGood(command, "Buyer");
     }
 
     private JSONObject transferGood(String command) {
@@ -209,6 +236,7 @@ public class HdsClient {
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("buyGood")) {
+            //System.out.println(command.split(" ").length);
             JSONObject jCommand = buyGood(command);
             jCommand.put("Timestamp", new java.util.Date().toString());
             String message = jCommand.toString();

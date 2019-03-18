@@ -279,7 +279,7 @@ public class ClientServiceTest extends DatabaseTestCase {
         insert("good30", "user30");
         update("good30");
 
-        String serverAnswer = sendTo("localhost", port, h.sendJson("buyGood good30").toString());
+        String serverAnswer = sendTo("localhost", port, h.sendJson("buyGood good30 "+ h._name).toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
@@ -301,7 +301,7 @@ public class ClientServiceTest extends DatabaseTestCase {
         insert("good30", seller);
         update("good30");
 
-        String serverAnswer = sendTo("localhost", portSeller, cBuyer.sendJson("buyGood good30").toString());
+        String serverAnswer = sendTo("localhost", portSeller, cBuyer.sendJson("buyGood good30 "+ cSeller._name).toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
@@ -322,7 +322,7 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cSeller = new HdsClient(seller, portSeller);
         insert("good30", seller);
 
-        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30").toString());
+        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30 "+ cSeller._name).toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
@@ -341,7 +341,7 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
         HdsClient cSeller = new HdsClient(seller, portSeller);
         insert("good25", seller);
-        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30").toString());
+        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30 "+ seller).toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
@@ -356,7 +356,7 @@ public class ClientServiceTest extends DatabaseTestCase {
         insert("good30", "user30");
         HdsClient cBuyer = new HdsClient("user1", 3999+1);
         HdsClient cSeller = new HdsClient("user30", 3999+30);
-        JSONObject j = cBuyer.sendJson("buyGood good30");
+        JSONObject j = cBuyer.sendJson("buyGood good30 "+ cSeller._name);
         j.put("Buyer","user33");
         String serverAnswer = sendTo("localhost", cSeller._port, j.toString());
 

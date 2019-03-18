@@ -30,7 +30,7 @@
                 </executions>
                 <configuration>
                     <mainClass>pt.tecnico.hds.client.Main</mainClass>
-                    <commandlineArgs>1</commandlineArgs>
+                    <!--<commandlineArgs>1</commandlineArgs>-->
                 </configuration>
 
             </plugin>
