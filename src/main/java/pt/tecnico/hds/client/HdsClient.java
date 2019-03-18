@@ -32,7 +32,9 @@ public class HdsClient {
         Thread thread = new Thread(runnable);
         thread.start();
     }
-
+    public void shutDown() {
+        System.exit(0);
+    }
     public void connectToServer(String host, int port) {
         try {
             Scanner scn = new Scanner(System.in);
@@ -42,7 +44,6 @@ public class HdsClient {
 
             // establish the connection with server port 5056
             Socket s = new Socket(ip, port);
-
             // obtaining input and out streams
             DataInputStream dis = new DataInputStream(s.getInputStream());
             DataOutputStream dos = new DataOutputStream(s.getOutputStream());

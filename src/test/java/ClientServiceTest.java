@@ -26,6 +26,8 @@ public class ClientServiceTest extends DatabaseTestCase {
     public static final String TABLE_LOGIN = "salarydetails";
     private FlatXmlDataSet loadedDataSet;
     private int serverPort = 19999;
+    //HdsClient cBuyer;
+    //HdsClient cSeller;
     //private SalaryCalcutation salaryCalicutation;
     private Connection jdbcConnection;
 
@@ -191,16 +193,15 @@ public class ClientServiceTest extends DatabaseTestCase {
 
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
 
-        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
+        String serverAnswer = sendTo("localhost", serverPort, sendTo("localhost", serverPort, jsonObj.toString()));
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
         jsonObj = new JSONObject(serverAnswer);
         jsonObj = new JSONObject(jsonObj.getString("Message"));
         Assert.assertEquals("YES", jsonObj.getString("Action"));
 
-        //Assert.assertEquals("YES", sendTo("localhost", serverPort, jsonObj.toString()));
+        Assert.assertEquals("YES", sendTo("localhost", serverPort, jsonObj.toString()));
     }
 
     @Test
@@ -211,7 +212,7 @@ public class ClientServiceTest extends DatabaseTestCase {
 
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
 
-        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
+        String serverAnswer = sendTo("localhost", serverPort, sendTo("localhost", serverPort, jsonObj.toString()));
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
@@ -225,12 +226,12 @@ public class ClientServiceTest extends DatabaseTestCase {
     public void testIntentionToSellDatabaseSuccess() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
-        HdsClient cBuyer = new HdsClient("user30", 3999+30);
+        HdsClient _cBuyer = new HdsClient("user3", 3999+3);
 
-        JSONObject jsonObj = cBuyer.sendJson("intentionToSell good30"); //new JSONObject();
+        JSONObject jsonObj = _cBuyer.sendJson("intentionToSell good30"); //new JSONObject();
         sendTo("localhost", serverPort, jsonObj.toString());
 
-        JSONObject jsonObj2 = cBuyer.sendJson("getStateOfGood good30"); //new JSONObject();
+        JSONObject jsonObj2 = _cBuyer.sendJson("getStateOfGood good30"); //new JSONObject();
         String serverAnswer = sendTo("localhost", serverPort, jsonObj2.toString());
         String example = "{\"Message\": \"{\"Owner\":\"user1\",\"Good\":\"good1\",\"OnSale\":\"true\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
@@ -247,15 +248,15 @@ public class ClientServiceTest extends DatabaseTestCase {
     @Test
     public void testIntentionToSellDatabaseFailure() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        insert("good30", "user30");
+        insert("good30", "user1");
 
-        HdsClient cBuyer = new HdsClient("user30", 3999+30);
+        HdsClient _cBuyer = new HdsClient("user2", 3999+2);
         //HdsClient cSeller = new HdsClient("user30", 3999+30);
 
-        JSONObject jsonObj = cBuyer.sendJson("intentionToSell good30");
+        JSONObject jsonObj = _cBuyer.sendJson("intentionToSell good30");
 
         sendTo("localhost", serverPort, jsonObj.toString());
-        JSONObject jsonObj2 = cBuyer.sendJson("getStateOfGood good30");
+        JSONObject jsonObj2 = _cBuyer.sendJson("getStateOfGood good30");
 
 
         String serverAnswer = sendTo("localhost", serverPort, jsonObj2.toString());
