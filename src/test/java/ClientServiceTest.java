@@ -3,6 +3,7 @@ import org.dbunit.*;
 import org.dbunit.database.DatabaseConnection;
 import org.dbunit.database.IDatabaseConnection;
 
+import org.dbunit.database.QueryDataSet;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.dbunit.operation.DatabaseOperation;
@@ -24,7 +25,8 @@ import static org.mockito.Matchers.notNull;
 
 public class ClientServiceTest extends DatabaseTestCase {
     public static final String TABLE_LOGIN = "salarydetails";
-    private FlatXmlDataSet loadedDataSet;
+    //private FlatXmlDataSet loadedDataSet;
+    private QueryDataSet loadedDataSet;
     private int serverPort = 19999;
     //HdsClient cBuyer;
     //HdsClient cSeller;
@@ -73,14 +75,21 @@ public class ClientServiceTest extends DatabaseTestCase {
 
     /** * Load the data which will be inserted for the test * @return IDataSet */
     protected IDataSet getDataSet() {
-        try {
 
-            loadedDataSet = new FlatXmlDataSet(new FileInputStream("dbunitData.xml"));
+        try {
+            loadedDataSet = new QueryDataSet(getConnection());
+            loadedDataSet.addTable("users", "SELECT * FROM users");
+            loadedDataSet.addTable("goods", "SELECT * FROM goods");
+            //dataSet.addTable("BAR");
+            //loadedDataSet = new FlatXmlDataSet(new FileInputStream("dbunitData.xml"));
         }
         catch (Exception e) {
             e.printStackTrace();
         }
-        return loadedDataSet;
+        finally {
+            return loadedDataSet;
+        }
+
     }
 
     public void insert(String goodsId, String userId) throws Exception {
