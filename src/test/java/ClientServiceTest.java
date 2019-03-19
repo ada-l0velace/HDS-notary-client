@@ -108,6 +108,19 @@ public class ClientServiceTest extends DatabaseTestCase {
 
     }
 
+    public void insert(String id, String type, String table) throws Exception{
+        String sql = "INSERT INTO " + table + "(" + type + ") Values (?)";
+
+        Connection conn = getConnection().getConnection();
+        try{
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     public Boolean serverIsUp() {
         try {
             Socket s = new Socket("localhost", serverPort);
@@ -157,6 +170,8 @@ public class ClientServiceTest extends DatabaseTestCase {
     public void testIsNotForSale() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
         HdsClient cSeller = new HdsClient("user30", 3999+30);
         JSONObject jsonObj = cSeller.sendJson("getStateOfGood good30");
         cSeller._myMap.put("user30", 3999+30);
@@ -178,6 +193,8 @@ public class ClientServiceTest extends DatabaseTestCase {
     public void testIsForSale() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
         update("good30");
         HdsClient cSeller = new HdsClient("user30", 3999+30);
         JSONObject jsonObj = cSeller.sendJson("getStateOfGood good30");
@@ -198,6 +215,8 @@ public class ClientServiceTest extends DatabaseTestCase {
     public void testIntentionToSellOutputSuccess() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
         HdsClient cSeller = new HdsClient("user30", 3999+30);
         cSeller._myMap.put("user30", 3999+30);
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
@@ -218,6 +237,8 @@ public class ClientServiceTest extends DatabaseTestCase {
     public void testIntentionToSellOutputFailure() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
         HdsClient cSeller = new HdsClient("user1", 3999+1);
         cSeller._myMap.put("user30", 3999+30);
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
@@ -236,9 +257,12 @@ public class ClientServiceTest extends DatabaseTestCase {
     public void testIntentionToSellDatabaseSuccess() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
+        HdsClient _cSeller = new HdsClient("user30", 3999+30);
         HdsClient _cBuyer = new HdsClient("user3", 3999+3);
         _cBuyer._myMap.put("user30", 3999+30);
-        JSONObject jsonObj = _cBuyer.sendJson("intentionToSell good30"); //new JSONObject();
+        JSONObject jsonObj = _cSeller.sendJson("intentionToSell good30"); //new JSONObject();
         sendTo("localhost", serverPort, jsonObj.toString());
 
         JSONObject jsonObj2 = _cBuyer.sendJson("getStateOfGood good30"); //new JSONObject();
@@ -259,6 +283,8 @@ public class ClientServiceTest extends DatabaseTestCase {
     public void testIntentionToSellDatabaseFailure() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user1");
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
 
         HdsClient _cBuyer = new HdsClient("user2", 3999+2);
         //HdsClient cSeller = new HdsClient("user30", 3999+30);
@@ -290,6 +316,8 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient h = new HdsClient("user30", port);
         h._myMap.put("user30", 3999+30);
         insert("good30", "user30");
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
         update("good30");
 
         String serverAnswer = sendTo("localhost", port, h.sendJson("buyGood good30 "+ h._name).toString());
@@ -313,8 +341,12 @@ public class ClientServiceTest extends DatabaseTestCase {
         cBuyer._myMap.put(seller, portSeller);
         cSeller._myMap.put(seller, portSeller);
         insert("good30", seller);
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
         update("good30");
 
+
+        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good30").toString());
         String serverAnswer = sendTo("localhost", portSeller, cBuyer.sendJson("buyGood good30 "+ cSeller._name).toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
@@ -337,6 +369,8 @@ public class ClientServiceTest extends DatabaseTestCase {
         cBuyer._myMap.put(seller, portSeller);
         cSeller._myMap.put(seller, portSeller);
         insert("good30", seller);
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
 
         String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30 "+ cSeller._name).toString());
 
@@ -359,7 +393,8 @@ public class ClientServiceTest extends DatabaseTestCase {
         cBuyer._myMap.put(seller, portSeller);
         cSeller._myMap.put(seller, portSeller);
         insert("good25", seller);
-        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30 "+ seller).toString());
+        insert("user30", "userId", "users");
+        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good29 "+ seller).toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
@@ -372,19 +407,21 @@ public class ClientServiceTest extends DatabaseTestCase {
     public void testBuyGoodBuyerDoesNotExist() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         insert("good30", "user30");
-        HdsClient cBuyer = new HdsClient("user1", 3999+1);
+        insert("user30", "userId", "users");
+        insert("good30", "goodsId", "goods");
+        HdsClient cBuyer = new HdsClient("user33", 3999+1);
         HdsClient cSeller = new HdsClient("user30", 3999+30);
         cBuyer._myMap.put("user30", 3999+30);
         cSeller._myMap.put("user30", 3999+30);
         JSONObject j = cBuyer.sendJson("buyGood good30 "+ cSeller._name);
-        j.put("Buyer","user33");
+        j.put("Buyer","user35");
         String serverAnswer = sendTo("localhost", cSeller._port, j.toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
         JSONObject jsonObj = new JSONObject(serverAnswer);
         jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("The Buyer does not exist","NO", jsonObj.getString("Action"));
+        Assert.assertEquals("The Buyer does not exist: " + j.toString(),"NO", jsonObj.getString("Action"));
     }
 
 }
