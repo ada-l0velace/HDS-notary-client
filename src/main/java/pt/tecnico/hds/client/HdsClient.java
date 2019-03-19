@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class HdsClient {
     public String _name;
     public int _port;
-    private Map<String,Integer> _myMap = new HashMap<String,Integer>();
+    public Map<String,Integer> _myMap = new HashMap<String,Integer>();
     public HdsClient(String name, int port) {
         _name = name;
         _port = port;
