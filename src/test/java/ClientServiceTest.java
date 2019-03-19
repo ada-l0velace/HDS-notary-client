@@ -193,10 +193,11 @@ public class ClientServiceTest extends DatabaseTestCase {
 
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
 
-        String serverAnswer = sendTo("localhost", serverPort, sendTo("localhost", serverPort, jsonObj.toString()));
+        //String serverAnswer = sendTo("localhost", serverPort, sendTo("localhost", serverPort, jsonObj.toString()));
+        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+", got: " + serverAnswer + "." + jsonObj,isJSONValid(serverAnswer));
         jsonObj = new JSONObject(serverAnswer);
         jsonObj = new JSONObject(jsonObj.getString("Message"));
         Assert.assertEquals("YES", jsonObj.getString("Action"));
@@ -212,7 +213,7 @@ public class ClientServiceTest extends DatabaseTestCase {
 
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
 
-        String serverAnswer = sendTo("localhost", serverPort, sendTo("localhost", serverPort, jsonObj.toString()));
+        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
