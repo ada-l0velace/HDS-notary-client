@@ -1,32 +1,28 @@
 import static org.junit.Assume.*;
 import org.dbunit.*;
-import org.dbunit.database.DatabaseConnection;
-import org.dbunit.database.IDatabaseConnection;
 
-import org.dbunit.database.QueryDataSet;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.operation.DatabaseOperation;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.*;
 import pt.tecnico.hds.client.HdsClient;
-import org.junit.runner.RunWith;
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.sql.*;
-import java.net.ConnectException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import static com.sun.org.apache.xerces.internal.util.PropertyState.is;
-import static org.mockito.Matchers.notNull;
 
-public class ClientServiceTest extends DatabaseTestCase {
+public class ClientServiceTest extends DBTestCase {
+    Lock sequential = new ReentrantLock();
+
     public static final String TABLE_LOGIN = "salarydetails";
-    //private FlatXmlDataSet loadedDataSet;
-    private QueryDataSet loadedDataSet;
+    //private FlatXmlDataSet flatXmlDataSet;
+    private FlatXmlDataSet loadedDataSet;
     private int serverPort = 19999;
     //HdsClient cBuyer;
     //HdsClient cSeller;
@@ -37,14 +33,53 @@ public class ClientServiceTest extends DatabaseTestCase {
         super( name );
         System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.sqlite.JDBC" );
         System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:sqlite:../HDS-notary-server/db/hds.db" );
+        System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_USERNAME, "" );
+        System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD, "" );
     }
 
+    //private static JdbcDatabaseTester databaseTester;
+
     /** * Provide a connection to the database * @return IDatabaseConnection */
-    protected IDatabaseConnection getConnection() throws Exception {
+    /*protected IDatabaseConnection getConnection() throws Exception {
         Class.forName("org.sqlite.JDBC");
         jdbcConnection = DriverManager.getConnection("jdbc:sqlite:../HDS-notary-server/db/hds.db");
         return new DatabaseConnection(jdbcConnection);
+    }*/
+
+    /*@BeforeClass
+    public static void setUpClass() throws Exception {
+        // Init test environment, session etc.
+        databaseTester = new JdbcDatabaseTester(
+                "org.sqlite.JDBC",
+                "jdbc:sqlite:../HDS-notary-server/db/hds.db",
+                "username", "password");
+        databaseTester.setDataSet(getDataSet());
     }
+
+    @AfterClass
+    public static void tearDownClass() {
+        // Close session etc.
+    }
+    @Before
+    public void setUp() throws Exception {
+        databaseTester.onSetup();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        databaseTester.onTearDown();
+        getConnection().close();
+    }*/
+
+    protected DatabaseOperation getSetUpOperation() throws Exception {
+        return DatabaseOperation.CLEAN_INSERT;
+    }
+
+    protected DatabaseOperation getTearDownOperation() throws Exception {
+        return DatabaseOperation.CLEAN_INSERT;
+    }
+
+
 
     public String sendTo(String hostname, int port, String payload) {
         boolean sent = false;
@@ -73,15 +108,25 @@ public class ClientServiceTest extends DatabaseTestCase {
         return "";
     }
 
+    protected IDataSet getDataSet() throws Exception {
+        //URL url = ClientServiceTest.class.getClassLoader().getResource("dbunitData.xml");
+        return new FlatXmlDataSetBuilder().build(new FileInputStream("dbunitData.xml"));
+    }
+
     /** * Load the data which will be inserted for the test * @return IDataSet */
-    protected IDataSet getDataSet() {
+    /*protected IDataSet getDataSet() {
 
         try {
-            loadedDataSet = new QueryDataSet(getConnection());
-            loadedDataSet.addTable("users", "SELECT * FROM users");
-            loadedDataSet.addTable("goods", "SELECT * FROM goods");
+            QueryDataSet queryDataSet = new QueryDataSet(getConnection());
+            queryDataSet.addTable("users", "SELECT userId FROM users");
+            queryDataSet.addTable("goods", "SELECT goodsId FROM goods");
+            queryDataSet.addTable("notary", "SELECT userId,goodsId,CASE WHEN LOWER(onSale) = 'true' THEN 1 ELSE 0 END AS onSale FROM notary");
+            FlatXmlDataSet.write(queryDataSet, new FileOutputStream("dbunitData.xml"));
+            //System.exit(0);
+            //flatXmlDataSet = new FlatXmlDataSet(new FileInputStream("dbunitData.xml"));
             //dataSet.addTable("BAR");
             //loadedDataSet = new FlatXmlDataSet(new FileInputStream("dbunitData.xml"));
+            loadedDataSet = new FlatXmlDataSetBuilder().build(new FileInputStream("dbunitData.xml"));
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -90,20 +135,29 @@ public class ClientServiceTest extends DatabaseTestCase {
             return loadedDataSet;
         }
 
+    }*/
+
+
+    /*protected DatabaseOperation getSetUpOperation() {
+        return DatabaseOperation.REFRESH;
     }
+
+    protected DatabaseOperation getTearDownOperation() {
+        return DatabaseOperation.DELETE;
+    }*/
 
     public void insert(String goodsId, String userId) throws Exception {
         String sql = "INSERT INTO notary(goodsId, userId, onSale) Values(?,?, FALSE )";
 
-        Connection conn = getConnection().getConnection();
+        Connection conn = getConnection().getConnection(); //DriverManager.getConnection("jdbc:sqlite:../HDS-notary-server/db/hds.db");
         try {
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+            PreparedStatement pstmt = getConnection().getConnection().prepareStatement(sql);
             pstmt.setString(1, goodsId);
             pstmt.setString(2, userId);
             pstmt.executeUpdate();
-            conn.close();
+            //conn.close();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            System.out.println(e.getMessage()+ " POODLE SUCKS");
         }
 
     }
@@ -117,7 +171,7 @@ public class ClientServiceTest extends DatabaseTestCase {
             pstmt.setString(1, id);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            System.out.println(e.getMessage() + " WTFFF");
         }
     }
 
@@ -192,9 +246,10 @@ public class ClientServiceTest extends DatabaseTestCase {
     @Test
     public void testIsForSale() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        insert("good30", "user30");
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", "user30");
+
         update("good30");
         HdsClient cSeller = new HdsClient("user30", 3999+30);
         JSONObject jsonObj = cSeller.sendJson("getStateOfGood good30");
@@ -214,9 +269,10 @@ public class ClientServiceTest extends DatabaseTestCase {
     @Test
     public void testIntentionToSellOutputSuccess() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        insert("good30", "user30");
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", "user30");
+
         HdsClient cSeller = new HdsClient("user30", 3999+30);
         cSeller._myMap.put("user30", 3999+30);
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
@@ -236,9 +292,10 @@ public class ClientServiceTest extends DatabaseTestCase {
     @Test
     public void testIntentionToSellOutputFailure() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        insert("good30", "user30");
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", "user30");
+
         HdsClient cSeller = new HdsClient("user1", 3999+1);
         cSeller._myMap.put("user30", 3999+30);
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
@@ -256,9 +313,10 @@ public class ClientServiceTest extends DatabaseTestCase {
     @Test
     public void testIntentionToSellDatabaseSuccess() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        insert("good30", "user30");
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", "user30");
+
         HdsClient _cSeller = new HdsClient("user30", 3999+30);
         HdsClient _cBuyer = new HdsClient("user3", 3999+3);
         _cBuyer._myMap.put("user30", 3999+30);
@@ -282,9 +340,9 @@ public class ClientServiceTest extends DatabaseTestCase {
     @Test
     public void testIntentionToSellDatabaseFailure() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        insert("good30", "user1");
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", "user1");
 
         HdsClient _cBuyer = new HdsClient("user2", 3999+2);
         //HdsClient cSeller = new HdsClient("user30", 3999+30);
@@ -315,9 +373,10 @@ public class ClientServiceTest extends DatabaseTestCase {
         int port = 3999+1;
         HdsClient h = new HdsClient("user30", port);
         h._myMap.put("user30", 3999+30);
-        insert("good30", "user30");
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", "user30");
+
         update("good30");
 
         String serverAnswer = sendTo("localhost", port, h.sendJson("buyGood good30 "+ h._name).toString());
@@ -340,9 +399,10 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cSeller = new HdsClient(seller, portSeller);
         cBuyer._myMap.put(seller, portSeller);
         cSeller._myMap.put(seller, portSeller);
-        insert("good30", seller);
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", seller);
+
         update("good30");
 
 
@@ -368,9 +428,9 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cSeller = new HdsClient(seller, portSeller);
         cBuyer._myMap.put(seller, portSeller);
         cSeller._myMap.put(seller, portSeller);
-        insert("good30", seller);
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", seller);
 
         String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30 "+ cSeller._name).toString());
 
@@ -392,8 +452,9 @@ public class ClientServiceTest extends DatabaseTestCase {
         HdsClient cSeller = new HdsClient(seller, portSeller);
         cBuyer._myMap.put(seller, portSeller);
         cSeller._myMap.put(seller, portSeller);
-        insert("good25", seller);
         insert("user30", "userId", "users");
+        insert("good25", seller);
+
         String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good29 "+ seller).toString());
 
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
@@ -406,9 +467,10 @@ public class ClientServiceTest extends DatabaseTestCase {
     @Test
     public void testBuyGoodBuyerDoesNotExist() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        insert("good30", "user30");
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");
+        insert("good30", "user30");
+
         HdsClient cBuyer = new HdsClient("user33", 3999+1);
         HdsClient cSeller = new HdsClient("user30", 3999+30);
         cBuyer._myMap.put("user30", 3999+30);

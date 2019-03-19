@@ -1,55 +1,55 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version='1.0' encoding='UTF-8'?>
 <dataset>
-    <notary goodsId='good1' userId='1' onSale='0'/>
-    <notary goodsId='good2' userId='2' onSale='0'/>
-    <notary goodsId='good3' userId='3' onSale='0'/>
-    <notary goodsId='good4' userId='4' onSale='0'/>
-    <notary goodsId='good5' userId='5' onSale='0'/>
-    <notary goodsId='good6' userId='6' onSale='0'/>
-    <notary goodsId='good7' userId='7' onSale='0'/>
-    <notary goodsId='good8' userId='8' onSale='0'/>
-    <notary goodsId='good9' userId='9' onSale='0'/>
-    <notary goodsId='good10' userId='10' onSale='0'/>
-    <notary goodsId='good11' userId='11' onSale='0'/>
-    <notary goodsId='good12' userId='12' onSale='0'/>
-    <notary goodsId='good13' userId='13' onSale='0'/>
-    <notary goodsId='good14' userId='14' onSale='0'/>
-    <notary goodsId='good15' userId='15' onSale='0'/>
-    <notary goodsId='good16' userId='16' onSale='0'/>
-    <notary goodsId='good17' userId='17' onSale='0'/>
-    <notary goodsId='good18' userId='18' onSale='0'/>
-    <notary goodsId='good19' userId='19' onSale='0'/>
-    <notary goodsId='good20' userId='20' onSale='0'/>
-    <notary goodsId='good21' userId='21' onSale='0'/>
-    <users userId="user1"/>
-    <users userId="user2"/>
-    <users userId="user3"/>
-    <users userId="user4"/>
-    <users userId="user5"/>
-    <users userId="user6"/>
-    <users userId="user7"/>
-    <users userId="user8"/>
-    <users userId="user9"/>
-    <users userId="user10"/>
-    <goods goodsId="good1"/>
-    <goods goodsId="good2"/>
-    <goods goodsId="good3"/>
-    <goods goodsId="good4"/>
-    <goods goodsId="good5"/>
-    <goods goodsId="good6"/>
-    <goods goodsId="good7"/>
-    <goods goodsId="good8"/>
-    <goods goodsId="good9"/>
-    <goods goodsId="good10"/>
-    <goods goodsId="good11"/>
-    <goods goodsId="good12"/>
-    <goods goodsId="good13"/>
-    <goods goodsId="good14"/>
-    <goods goodsId="good15"/>
-    <goods goodsId="good16"/>
-    <goods goodsId="good17"/>
-    <goods goodsId="good18"/>
-    <goods goodsId="good19"/>
-    <goods goodsId="good20"/>
-    <goods goodsId="good21"/>
+  <users userId="user1"/>
+  <users userId="user2"/>
+  <users userId="user3"/>
+  <users userId="user4"/>
+  <users userId="user5"/>
+  <users userId="user6"/>
+  <users userId="user7"/>
+  <users userId="user8"/>
+  <users userId="user9"/>
+  <users userId="user10"/>
+  <goods goodsId="good1"/>
+  <goods goodsId="good2"/>
+  <goods goodsId="good3"/>
+  <goods goodsId="good4"/>
+  <goods goodsId="good5"/>
+  <goods goodsId="good6"/>
+  <goods goodsId="good7"/>
+  <goods goodsId="good8"/>
+  <goods goodsId="good9"/>
+  <goods goodsId="good10"/>
+  <goods goodsId="good11"/>
+  <goods goodsId="good12"/>
+  <goods goodsId="good13"/>
+  <goods goodsId="good14"/>
+  <goods goodsId="good15"/>
+  <goods goodsId="good16"/>
+  <goods goodsId="good17"/>
+  <goods goodsId="good18"/>
+  <goods goodsId="good19"/>
+  <goods goodsId="good20"/>
+  <goods goodsId="good21"/>
+  <notary userId="user5" goodsId="good1" onSale="0"/>
+  <notary userId="user3" goodsId="good2" onSale="0"/>
+  <notary userId="user9" goodsId="good3" onSale="0"/>
+  <notary userId="user10" goodsId="good4" onSale="0"/>
+  <notary userId="user6" goodsId="good5" onSale="0"/>
+  <notary userId="user8" goodsId="good6" onSale="0"/>
+  <notary userId="user1" goodsId="good7" onSale="0"/>
+  <notary userId="user4" goodsId="good8" onSale="0"/>
+  <notary userId="user7" goodsId="good9" onSale="0"/>
+  <notary userId="user3" goodsId="good10" onSale="0"/>
+  <notary userId="user2" goodsId="good11" onSale="0"/>
+  <notary userId="user10" goodsId="good12" onSale="0"/>
+  <notary userId="user9" goodsId="good13" onSale="0"/>
+  <notary userId="user8" goodsId="good14" onSale="0"/>
+  <notary userId="user7" goodsId="good15" onSale="0"/>
+  <notary userId="user6" goodsId="good16" onSale="0"/>
+  <notary userId="user5" goodsId="good17" onSale="0"/>
+  <notary userId="user4" goodsId="good18" onSale="0"/>
+  <notary userId="user3" goodsId="good19" onSale="0"/>
+  <notary userId="user2" goodsId="good20" onSale="0"/>
+  <notary userId="user1" goodsId="good21" onSale="0"/>
 </dataset>
