@@ -1,6 +1,8 @@
 import static org.junit.Assume.*;
 import org.dbunit.*;
 
+import org.dbunit.database.DatabaseConnection;
+import org.dbunit.database.QueryDataSet;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
@@ -15,7 +17,13 @@ import java.net.*;
 import java.sql.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
+/*
+QueryDataSet queryDataSet = new QueryDataSet(new DatabaseConnection(DriverManager.getConnection("jdbc:sqlite:../HDS-notary-server/db/hds.db")));
+queryDataSet.addTable("users", "SELECT userId FROM users");
+queryDataSet.addTable("goods", "SELECT goodsId FROM goods");
+queryDataSet.addTable("notary", "SELECT userId,goodsId,CASE WHEN LOWER(onSale) = 'true' THEN 1 ELSE 0 END AS onSale FROM notary");
+FlatXmlDataSet.write(queryDataSet, new FileOutputStream("dbunitData.xml"));
+ */
 
 public class ClientServiceTest extends DBTestCase {
     Lock sequential = new ReentrantLock();
@@ -109,6 +117,7 @@ public class ClientServiceTest extends DBTestCase {
     }
 
     protected IDataSet getDataSet() throws Exception {
+
         //URL url = ClientServiceTest.class.getClassLoader().getResource("dbunitData.xml");
         return new FlatXmlDataSetBuilder().build(new FileInputStream("dbunitData.xml"));
     }
@@ -368,9 +377,7 @@ public class ClientServiceTest extends DBTestCase {
     @Test
     public void testBuyGoodOwnGoodFailure() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        String buyer = "user1";
-        String seller = "user30";
-        int port = 3999+1;
+        int port = 3999+30;
         HdsClient h = new HdsClient("user30", port);
         h._myMap.put("user30", 3999+30);
         insert("user30", "userId", "users");
@@ -378,9 +385,8 @@ public class ClientServiceTest extends DBTestCase {
         insert("good30", "user30");
 
         update("good30");
-
-        String serverAnswer = sendTo("localhost", port, h.sendJson("buyGood good30 "+ h._name).toString());
-
+        String send_to = h.sendJson("buyGood good30 "+ h._name).toString();
+        String serverAnswer = sendTo("localhost", port, send_to);
         String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
         Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
         JSONObject jsonObj = new JSONObject(serverAnswer);
