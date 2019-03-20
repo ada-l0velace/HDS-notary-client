@@ -25,101 +25,11 @@ queryDataSet.addTable("notary", "SELECT userId,goodsId,CASE WHEN LOWER(onSale) =
 FlatXmlDataSet.write(queryDataSet, new FileOutputStream("dbunitData.xml"));
  */
 
-public class ClientServiceTest extends DBTestCase {
-    Lock sequential = new ReentrantLock();
+public class ClientServiceTest extends BaseTest {
 
-    public static final String TABLE_LOGIN = "salarydetails";
-    //private FlatXmlDataSet flatXmlDataSet;
-    private FlatXmlDataSet loadedDataSet;
-    private int serverPort = 19999;
-    //HdsClient cBuyer;
-    //HdsClient cSeller;
-    //private SalaryCalcutation salaryCalicutation;
-    private Connection jdbcConnection;
 
     public ClientServiceTest (String name) {
         super( name );
-        System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.sqlite.JDBC" );
-        System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:sqlite:../HDS-notary-server/db/hds.db" );
-        System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_USERNAME, "" );
-        System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD, "" );
-    }
-
-    //private static JdbcDatabaseTester databaseTester;
-
-    /** * Provide a connection to the database * @return IDatabaseConnection */
-    /*protected IDatabaseConnection getConnection() throws Exception {
-        Class.forName("org.sqlite.JDBC");
-        jdbcConnection = DriverManager.getConnection("jdbc:sqlite:../HDS-notary-server/db/hds.db");
-        return new DatabaseConnection(jdbcConnection);
-    }*/
-
-    /*@BeforeClass
-    public static void setUpClass() throws Exception {
-        // Init test environment, session etc.
-        databaseTester = new JdbcDatabaseTester(
-                "org.sqlite.JDBC",
-                "jdbc:sqlite:../HDS-notary-server/db/hds.db",
-                "username", "password");
-        databaseTester.setDataSet(getDataSet());
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-        // Close session etc.
-    }
-    @Before
-    public void setUp() throws Exception {
-        databaseTester.onSetup();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        databaseTester.onTearDown();
-        getConnection().close();
-    }*/
-
-    protected DatabaseOperation getSetUpOperation() throws Exception {
-        return DatabaseOperation.CLEAN_INSERT;
-    }
-
-    protected DatabaseOperation getTearDownOperation() throws Exception {
-        return DatabaseOperation.CLEAN_INSERT;
-    }
-
-
-
-    public String sendTo(String hostname, int port, String payload) {
-        boolean sent = false;
-
-        try {
-            // getting localhost ip
-            InetAddress ip = InetAddress.getByName(hostname);
-
-            // establish the connection with server port 5056
-            Socket s = new Socket(ip, port);
-
-            DataInputStream dis = new DataInputStream(s.getInputStream());
-            DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-            dos.writeUTF(payload);
-
-            String value = dis.readUTF();
-            s.close();
-            dis.close();
-            dos.close();
-            return value;
-        } catch (UnknownHostException e) {
-            // TODO
-        } catch (IOException e) {
-            // TODO
-        }
-        return "";
-    }
-
-    protected IDataSet getDataSet() throws Exception {
-
-        //URL url = ClientServiceTest.class.getClassLoader().getResource("dbunitData.xml");
-        return new FlatXmlDataSetBuilder().build(new FileInputStream("dbunitData.xml"));
     }
 
     /** * Load the data which will be inserted for the test * @return IDataSet */
@@ -145,15 +55,7 @@ public class ClientServiceTest extends DBTestCase {
         }
 
     }*/
-
-
-    /*protected DatabaseOperation getSetUpOperation() {
-        return DatabaseOperation.REFRESH;
-    }
-
-    protected DatabaseOperation getTearDownOperation() {
-        return DatabaseOperation.DELETE;
-    }*/
+    
 
     public void insert(String goodsId, String userId) throws Exception {
         String sql = "INSERT INTO notary(goodsId, userId, onSale) Values(?,?, FALSE )";

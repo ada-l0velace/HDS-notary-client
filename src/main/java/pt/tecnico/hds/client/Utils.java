@@ -1,8 +1,15 @@
 package pt.tecnico.hds.client;
 
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
+
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 public class Utils {
     public static String getSHA256(String input) {
@@ -38,4 +45,63 @@ public class Utils {
             return null;
         }
     }
+
+    public static byte[] getBytesFromFile(String file) throws IOException {
+        DataInputStream dis = new DataInputStream(new FileInputStream(file));
+        byte[] privKeyBytes = new byte[(int)file.length()];
+        dis.close();
+        return privKeyBytes;
+    }
+
+    public static Key read(String keyPath) throws IOException {
+        System.out.println("Reading key from file " + keyPath + " ...");
+        FileInputStream fis = new FileInputStream(keyPath);
+        byte[] encoded = new byte[fis.available()];
+        fis.read(encoded);
+        fis.close();
+        return new SecretKeySpec(encoded, "RSA");
+    }
+
+    public static Boolean verifySignWithPubKey(String message, String signedMessage, String pubKeyFile) {
+        try {
+            Key loadedKey = read(pubKeyFile);
+            byte[] pubKeyBytes = loadedKey.getEncoded();
+
+            X509EncodedKeySpec ks = new X509EncodedKeySpec(pubKeyBytes);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            PublicKey pub = kf.generatePublic(ks);
+
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            sig.initVerify(pub);
+            sig.update(message.getBytes());
+            return sig.verify(new BASE64Decoder().decodeBuffer(signedMessage));
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static String signWithPrivateKey(String message, String privKeyFile) {
+        try {
+            Key loadedKey = read(privKeyFile);
+            byte[] privKeyBytes = loadedKey.getEncoded();
+
+            PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(privKeyBytes);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+
+            PrivateKey priv = kf.generatePrivate(ks);
+
+            Signature sig = Signature.getInstance("SHA256withRSA");
+
+            sig.initSign(priv);
+            sig.update(message.getBytes("UTF-8"));
+            return new BASE64Encoder().encode(sig.sign());
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
 }

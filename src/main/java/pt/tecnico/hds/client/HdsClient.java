@@ -212,7 +212,7 @@ public class HdsClient {
 
     public JSONObject buildFinalMessage(String message, JSONObject finalMessage) {
         finalMessage.put("Message", message);
-        finalMessage.put("Hash", Utils.getSHA256(message));
+        finalMessage.put("Hash", Utils.signWithPrivateKey(message, "assymetricKeys/"+_name));
         return finalMessage;
     }
 
