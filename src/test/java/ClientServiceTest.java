@@ -55,7 +55,7 @@ public class ClientServiceTest extends BaseTest {
         }
 
     }*/
-    
+
 
     public void insert(String goodsId, String userId) throws Exception {
         String sql = "INSERT INTO notary(goodsId, userId, onSale) Values(?,?, FALSE )";
