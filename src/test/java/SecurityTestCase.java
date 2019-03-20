@@ -58,6 +58,29 @@ public class SecurityTestCase extends BaseTest {
         Assert.assertEquals("Replay attack detected.","NO", j0.getString("Action"));
     }
 
+    @Test
+    public void testManInTheMiddleAttackBuyGood() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        String buyer = "user1";
+        String seller = "user2";
+        int portBuyer = 3999+1;
+        int portSeller = 3999+2;
+        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+
+        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        JSONObject j0 = cBuyer.sendJson("buyGood good11 "+ cSeller._name);
+        JSONObject j1 = new JSONObject(j0.getString("Message"));
+        j1.put("Good", "good20");
+        //System.out.println(j1.toString()+"||||||||||");
+        j0.put("Message",j1.toString());
+
+        String serverAnswer = sendTo("localhost", portSeller, j0.toString());
+
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("NO", jsonObj.getString("Action"));
+    }
 
 
 
