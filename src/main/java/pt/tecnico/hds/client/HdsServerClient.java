@@ -33,12 +33,16 @@ public class HdsServerClient implements Runnable {
             // write on output stream based on the
             // answer from the client
             JSONObject jsonObj = new JSONObject(received);
+            JSONObject saved = jsonObj;
             jsonObj = new JSONObject(jsonObj.getString("Message"));
             received = jsonObj.getString("Action");
 
             switch (received) {
                 case "buyGood" :
                     JSONObject j0 = _client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"));
+                    j0.put("Message2",saved.getString("Message"));
+                    j0.put("Hash2",saved.getString("Hash"));
+                    System.out.println(j0.toString()+"---------------------------------------------------");
                     String answer = _client.connectToClient("localhost", 19999, j0);
                     System.out.println(connection+" "+ answer);
                     dos.writeUTF(answer);
