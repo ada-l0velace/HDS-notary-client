@@ -4,6 +4,8 @@ import org.junit.Test;
 import pt.tecnico.hds.client.HdsClient;
 import pt.tecnico.hds.client.Utils;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assume.assumeTrue;
 
 
@@ -22,7 +24,7 @@ public class SecurityTestCase extends BaseTest {
         String signedMessage = response.getString("Hash");
         //String signedMessage = Utils.signWithPrivateKey(message, "assymetricKeys/user1");
         //System.out.println(signedMessage);
-        Assert.assertTrue("This message has not been signed by user1 and is subject to attacks.",Utils.verifySignWithPubKey(message, signedMessage, "assymetricKeys/user1.pub"));
+        Assert.assertTrue("This message has not been signed by user1 and is subject to attacks.",Utils.verifySignWithPubKeyFile(message, signedMessage, "assymetricKeys/user1.pub"));
     }
 
     @Test
@@ -92,17 +94,18 @@ public class SecurityTestCase extends BaseTest {
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
         HdsClient cSeller = new HdsClient(seller, portSeller);
 
+        // Seller sells the item
         sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
         JSONObject replayAttackJson = cBuyer.sendJson("buyGood good20 "+ cSeller._name);
         String serverAnswer = sendTo("localhost", portSeller, replayAttackJson.toString());
 
-        // checks if the transaction is validated
         JSONObject jsonObj = new JSONObject(serverAnswer);
         jsonObj = new JSONObject(jsonObj.getString("Message"));
         Assert.assertEquals("YES", jsonObj.getString("Action"));
 
+        // Buyer sells the item back to the seller
         sendTo("localhost", serverPort, cBuyer.sendJson("intentionToSell good20").toString());
-        JSONObject j0 = cSeller.sendJson("buyGood good20 "+ cSeller._name);
+        JSONObject j0 = cSeller.sendJson("buyGood good20 "+ cBuyer._name);
         serverAnswer = sendTo("localhost", portBuyer, j0.toString());
 
         // checks if the transaction is validated
@@ -110,7 +113,13 @@ public class SecurityTestCase extends BaseTest {
         _jsonObj = new JSONObject(_jsonObj.getString("Message"));
         Assert.assertEquals("YES", _jsonObj.getString("Action"));
 
-        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        TimeUnit.SECONDS.sleep(1);
+        // Recovering the item
+        serverAnswer = sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("YES", jsonObj.getString("Action"));
+
         serverAnswer = sendTo("localhost", portSeller, replayAttackJson.toString());
 
         // checks if the replay attack was denied
@@ -224,7 +233,7 @@ public class SecurityTestCase extends BaseTest {
         Assert.assertEquals("YES", jsonObj.getString("Action"));
 
         // replay attack
-
+        TimeUnit.SECONDS.sleep(3);
         sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
 
         // checking the servers answer

@@ -62,18 +62,27 @@ public class Utils {
         return new SecretKeySpec(encoded, "RSA");
     }
 
-    public static Boolean verifySignWithPubKey(String message, String signedMessage, String pubKeyFile) {
+    public static Boolean verifySignWithPubKeyFile(String message, String signedMessage, String pubKeyFile) {
         try {
             Key loadedKey = read(pubKeyFile);
-            byte[] pubKeyBytes = loadedKey.getEncoded();
+            return verifySignWithPubKey(message, signedMessage, loadedKey);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
-            X509EncodedKeySpec ks = new X509EncodedKeySpec(pubKeyBytes);
+    public static Boolean verifySignWithPubKey(String message, String signedMessage, Key pubKey) {
+        try {
+            X509EncodedKeySpec ks = new X509EncodedKeySpec(pubKey.getEncoded());
             KeyFactory kf = KeyFactory.getInstance("RSA");
             PublicKey pub = kf.generatePublic(ks);
 
             Signature sig = Signature.getInstance("SHA256withRSA");
             sig.initVerify(pub);
             sig.update(message.getBytes());
+
             return sig.verify(new BASE64Decoder().decodeBuffer(signedMessage));
         }
         catch (Exception e) {
