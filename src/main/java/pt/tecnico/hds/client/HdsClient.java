@@ -250,4 +250,11 @@ public class HdsClient {
         finalMessage.put("Hash", Utils.getSHA256(jo.toString()));
         return finalMessage;
     }
+
+    public JSONObject sendJson(String command, JSONObject secondMessage) {
+        JSONObject j0 = sendJson(command);
+        j0.put("Message2",secondMessage.getString("Message"));
+        j0.put("Hash2",secondMessage.getString("Hash"));
+        return j0;
+    }
 }

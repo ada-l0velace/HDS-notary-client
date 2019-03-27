@@ -158,5 +158,86 @@ public class SecurityTestCase extends BaseTest {
 
     }
 
+    @Test
+    public void testManInTheMiddleTransferGood() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        String buyer = "user1";
+        String seller = "user2";
+        int portBuyer = 3999+1;
+        int portSeller = 3999+2;
+        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+
+        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good11").toString());
+        JSONObject j0 = cBuyer.sendJson("buyGood good20 "+ cSeller._name);
+
+        JSONObject mitmJson =cSeller.sendJson("transferGood good20 "+ cBuyer._name, j0);
+
+
+        //System.out.println(a + " -----------");
+
+        //doing the man in the middle
+        JSONObject manInTheMiddleJson = new JSONObject(mitmJson.getString("Message"));
+        manInTheMiddleJson.put("Good","good11");
+        mitmJson.put("Message", manInTheMiddleJson.toString());
+
+        // checking the servers answer
+        String serverAnswer = sendTo("localhost", serverPort, mitmJson.toString());
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("NO", jsonObj.getString("Action"));
+    }
+
+    @Test
+        public void testReplayAttackTransferGood() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        String buyer = "user1";
+        String seller = "user2";
+        int portBuyer = 3999+1;
+        int portSeller = 3999+2;
+        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+
+        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        JSONObject j0 = cBuyer.sendJson("buyGood good20 "+ cSeller._name);
+
+        JSONObject replayJson =cSeller.sendJson("transferGood good20 "+ cBuyer._name, j0);
+
+        // checking the servers answer
+        String serverAnswer = sendTo("localhost", serverPort, replayJson.toString());
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("YES", jsonObj.getString("Action"));
+
+        sendTo("localhost", serverPort, cBuyer.sendJson("intentionToSell good20").toString());
+
+        // Buying item back
+        j0 = cSeller.sendJson("buyGood good20 "+ cBuyer._name);
+
+        JSONObject newJson =cBuyer.sendJson("transferGood good20 "+ cSeller._name, j0);
+
+        // checking the servers answer
+        serverAnswer = sendTo("localhost", serverPort, newJson.toString());
+        jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("YES", jsonObj.getString("Action"));
+
+        // replay attack
+
+        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+
+        // checking the servers answer
+        serverAnswer = sendTo("localhost", serverPort, replayJson.toString());
+
+        jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        //System.out.println();
+        Assert.assertEquals("NO", jsonObj.getString("Action"));
+
+    }
+
+
+
 
 }
