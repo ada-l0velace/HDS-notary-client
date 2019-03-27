@@ -121,6 +121,42 @@ public class SecurityTestCase extends BaseTest {
 
     }
 
+    @Test
+    public void testManInTheMiddleAttackGetStateOfGood() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        HdsClient cSeller = new HdsClient("user1", 3999+1);
+        JSONObject jsonObj = cSeller.sendJson("getStateOfGood good7");
+        JSONObject j0 = new JSONObject(jsonObj.getString("Message"));
+        j0.put("Good","good21");
+        jsonObj.put("Message", j0.toString());
+        //System.out.println(j0.toString());
+        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
+        jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertTrue("The server answer didn't send a refusing action after MITM",jsonObj.has("Action"));
+        Assert.assertEquals("Message got changed in the middle of the connection, the server isn't validating the requests.","NO", jsonObj.getString("Action"));
+    }
+
+    @Test
+    public void testReplayAttackGetStateOfGood() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        HdsClient cSeller = new HdsClient("user1", 3999+1);
+        JSONObject replayAttackJson = cSeller.sendJson("getStateOfGood good7");
+        //System.out.println(j0.toString());
+        String serverAnswer = sendTo("localhost", serverPort, replayAttackJson.toString());
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        System.out.println(jsonObj.toString() + "------------");
+        Assert.assertFalse(jsonObj.has("Action"));
+
+        // Applying the replay attack
+        serverAnswer = sendTo("localhost", serverPort, replayAttackJson.toString());
+        jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertTrue("The server answer didn't send a refusing action after replay attack", jsonObj.has("Action"));
+        Assert.assertEquals("NO", jsonObj.getString("Action"));
+
+    }
 
 
 }
