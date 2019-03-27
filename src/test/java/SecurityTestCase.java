@@ -82,6 +82,45 @@ public class SecurityTestCase extends BaseTest {
         Assert.assertEquals("NO", jsonObj.getString("Action"));
     }
 
+    @Test
+    public void testReplayAttackBuyGood() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        String buyer = "user1";
+        String seller = "user2";
+        int portBuyer = 3999+1;
+        int portSeller = 3999+2;
+        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+
+        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        JSONObject replayAttackJson = cBuyer.sendJson("buyGood good20 "+ cSeller._name);
+        String serverAnswer = sendTo("localhost", portSeller, replayAttackJson.toString());
+
+        // checks if the transaction is validated
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("YES", jsonObj.getString("Action"));
+
+        sendTo("localhost", serverPort, cBuyer.sendJson("intentionToSell good20").toString());
+        JSONObject j0 = cSeller.sendJson("buyGood good20 "+ cSeller._name);
+        serverAnswer = sendTo("localhost", portBuyer, j0.toString());
+
+        // checks if the transaction is validated
+        JSONObject _jsonObj = new JSONObject(serverAnswer);
+        _jsonObj = new JSONObject(_jsonObj.getString("Message"));
+        Assert.assertEquals("YES", _jsonObj.getString("Action"));
+
+        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        serverAnswer = sendTo("localhost", portSeller, replayAttackJson.toString());
+
+        // checks if the replay attack was denied
+        _jsonObj = new JSONObject(serverAnswer);
+        _jsonObj = new JSONObject(_jsonObj.getString("Message"));
+        Assert.assertEquals("NO", _jsonObj.getString("Action"));
+
+
+    }
+
 
 
 }
