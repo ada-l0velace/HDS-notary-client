@@ -276,11 +276,36 @@ public class ClientServiceTest extends BaseTest {
         Assert.assertEquals("The OnSale value is wrong.","false", jsonObj.getString("OnSale"));
     }
 
+
+    @Test
+    public void testBuyGoodThatAClientDoesntOwn() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        String buyer = "user1";
+        String seller = "user2";
+        String offseller = "user3";
+        int portBuyer = 3999+1;
+        int portSeller = 3999+2;
+        int portOffSeller = 3999+3;
+        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+        HdsClient cOffSeller = new HdsClient(offseller, portOffSeller);
+
+        sendTo("localhost", serverPort, cOffSeller.sendJson("intentionToSell good19").toString());
+        String serverAnswer = sendTo("localhost", portSeller, cBuyer.sendJson("buyGood good19 "+ cSeller._name).toString());
+
+        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
+        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("NO", jsonObj.getString("Action"));
+    }
+
     @Test
     public void testBuyGoodOwnGoodFailure() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         int port = 3999+30;
         HdsClient h = new HdsClient("user30", port);
+
         h._myMap.put("user30", 3999+30);
         insert("user30", "userId", "users");
         insert("good30", "goodsId", "goods");

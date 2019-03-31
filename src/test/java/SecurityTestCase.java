@@ -199,7 +199,7 @@ public class SecurityTestCase extends BaseTest {
     }
 
     @Test
-        public void testReplayAttackTransferGood() throws Exception {
+    public void testReplayAttackTransferGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         String buyer = "user1";
         String seller = "user2";
@@ -246,7 +246,20 @@ public class SecurityTestCase extends BaseTest {
 
     }
 
+    @Test
+    public void testServerMessageIsSigned() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        String seller = "user2";
+        int portSeller = 3999+2;
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+        String serverAnswer = sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        JSONObject jsonObj = new JSONObject(serverAnswer);
+        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        Assert.assertEquals("YES", jsonObj.getString("Action"));
+        
+
+    }
 
 
 
-}
+    }

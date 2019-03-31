@@ -121,7 +121,7 @@ public class HdsClient {
                 dos.writeUTF(jo.toString());
                 String received = dis.readUTF();
                 System.out.println(received);
-                /*if(port != 19999) {
+                /*if(port != 19999)h {
                     System.out.println("Client " + s + " sends " + received);
                     dos.writeUTF(received);
                 }*/
