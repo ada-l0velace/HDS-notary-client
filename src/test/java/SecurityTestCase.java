@@ -232,11 +232,11 @@ public class SecurityTestCase extends BaseTest {
         jsonObj = new JSONObject(jsonObj.getString("Message"));
         Assert.assertEquals("YES", jsonObj.getString("Action"));
 
-        // replay attack
+
         TimeUnit.SECONDS.sleep(3);
         sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
 
-        // checking the servers answer
+        // replay attack
         serverAnswer = sendTo("localhost", serverPort, replayJson.toString());
 
         jsonObj = new JSONObject(serverAnswer);
@@ -249,14 +249,8 @@ public class SecurityTestCase extends BaseTest {
     @Test
     public void testServerMessageIsSigned() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        String seller = "user2";
-        int portSeller = 3999+2;
-        HdsClient cSeller = new HdsClient(seller, portSeller);
-        String serverAnswer = sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("YES", jsonObj.getString("Action"));
-        
+        /*TODO*/
+
 
     }
 

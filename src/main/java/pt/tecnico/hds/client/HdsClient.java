@@ -5,6 +5,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -18,6 +20,10 @@ public class HdsClient {
         _port = port;
         initUsers();
         startServer();
+        if (!Files.exists(Paths.get("db"))) {
+            new File("db").mkdirs();
+        }
+        DatabaseManager.getInstance().createDatabase();
     }
 
     private void initUsers() {
@@ -35,6 +41,7 @@ public class HdsClient {
     public void shutDown() {
         System.exit(0);
     }
+
     public void connectToServer(String host, int port) {
         try {
             Scanner scn = new Scanner(System.in);
@@ -64,7 +71,7 @@ public class HdsClient {
                         dos.close();
                         dis.close();
                         s.close();
-                        System.exit(0);
+                        shutDown();
                         break;
                     }
                     //System.out.println(tosend);
@@ -83,7 +90,16 @@ public class HdsClient {
                     System.out.println(s.toString() + " "+ out);
                     // printing date or time as requested by client
                     String received = dis.readUTF();
-                    System.out.println(received);
+                    JSONObject serverAnswer = new JSONObject(received);
+                    String hash = Utils.getSHA256(serverAnswer.getString("Message"));
+                    if(Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), "assymetricKeys/server.pub")
+                            && DatabaseManager.getInstance().verifyReplay(hash)) {
+                        DatabaseManager.getInstance().addToRequests(hash);
+                        System.out.println(received);
+                    }
+                    else {
+                        System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
+                    }
 
                 }
                 catch (Exception e) {
