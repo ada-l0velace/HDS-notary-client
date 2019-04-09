@@ -268,12 +268,29 @@ public class SecurityTestCase extends BaseTest {
     }
 
     @Test
-    public void testServerMessageIsSigned() throws Exception {
+    public void testServerResponseManInTheMiddle() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        /*TODO*/
-
-
+        String seller = "user2";
+        int portSeller = 3999+2;
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+        String serverAnswer = sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        JSONObject j = new JSONObject(serverAnswer);
+        j.put("Good", "w");
+        Assert.assertFalse("Client is not detecting man in the middle",cSeller.validateServerRequest(j));
     }
+
+    @Test
+    public void testServerReplayAttack() throws Exception {
+        assumeTrue("Server is not Up",serverIsUp());
+        String seller = "user2";
+        int portSeller = 3999+2;
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+        String serverAnswer = sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        Assert.assertTrue("Something is wrong the server is not signing well", cSeller.validateServerRequest(new JSONObject(serverAnswer)));
+        Assert.assertFalse("Client is not validating replay attacks",cSeller.validateServerRequest(new JSONObject(serverAnswer)));
+    }
+
+
 
 
 

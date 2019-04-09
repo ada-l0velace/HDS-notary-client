@@ -27,6 +27,12 @@ public class HdsClient {
         DatabaseManager.getInstance().createDatabase();
     }
 
+    public boolean validateServerRequest(JSONObject serverAnswer) {
+        String hash = Utils.getSHA256(serverAnswer.getString("Message"));
+        return Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), "assymetricKeys/server.pub")
+                && DatabaseManager.getInstance().verifyReplay(hash);
+    }
+
     private void initUsers() {
         for (int i = 1; i <=10;i++) {
             _myMap.put("user"+i,3999+i);
@@ -97,10 +103,9 @@ public class HdsClient {
                     // printing date or time as requested by client
                     String received = dis.readUTF();
                     JSONObject serverAnswer = new JSONObject(received);
-                    String hash = Utils.getSHA256(serverAnswer.getString("Message"));
-                    if(Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), "assymetricKeys/server.pub")
-                            && DatabaseManager.getInstance().verifyReplay(hash)) {
-                        DatabaseManager.getInstance().addToRequests(hash);
+
+                    if(validateServerRequest(serverAnswer)) {
+                        DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
                         System.out.println(received);
                     }
                     else {
