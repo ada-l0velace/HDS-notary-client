@@ -1,4 +1,5 @@
 package pt.tecnico.hds.client;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -77,6 +78,12 @@ public class HdsClient {
                     //System.out.println(tosend);
 
                     JSONObject jo = this.sendJson(tosend);
+                    String out = jo.toString();
+
+                    if(out.contains("Wrong Syntax")) {
+                        System.out.println(new JSONObject(jo.getString("Message")).getString("Action"));
+                        continue;
+                    }
 
                     if (new JSONObject(jo.getString("Message")).getString("Action").equals("buyGood")) {
 
@@ -85,7 +92,6 @@ public class HdsClient {
                         continue;
                     }
 
-                    String out = this.sendJson(tosend).toString();
                     dos.writeUTF(out);
                     System.out.println(s.toString() + " "+ out);
                     // printing date or time as requested by client
@@ -102,14 +108,15 @@ public class HdsClient {
                     }
 
                 }
+                catch (JSONException jE) {}
                 catch (Exception e) {
-                    e.printStackTrace();
-                    break;
+                    //e.printStackTrace();
+                    //break;
                 }
             }
 
         }catch(IOException e){
-            e.printStackTrace();
+            //e.printStackTrace();
         }
 
     }
@@ -169,7 +176,7 @@ public class HdsClient {
         return answer;
     }
 
-    private JSONObject actionGoodSeller(String command, String s) {
+    private JSONObject actionGoodSeller(String command, String s, String error) {
         String [] cmds = command.split(" ");
         JSONObject jo = new JSONObject();
         if (cmds.length == 2) {
@@ -178,7 +185,7 @@ public class HdsClient {
             jo.put(s, _name);
         }
         else {
-            jo.put("Action", "Invalid command");
+            jo.put("Action", "Wrong Syntax: ");
         }
         return jo;
     }
@@ -187,24 +194,23 @@ public class HdsClient {
         String [] cmds = command.split(" ");
         JSONObject jo = new JSONObject();
         System.out.println(cmds.length);
-        String seller = cmds[2];
-        if (cmds.length == 3 && _myMap.containsKey(seller)) {
+        if (cmds.length == 3 && _myMap.containsKey(cmds[2])) {
             jo.put("Action", cmds[0]);
             jo.put("Good", cmds[1]);
             jo.put(s, _name);
         }
         else {
-            jo.put("Action", "Invalid command");
+            jo.put("Action", "Wrong Syntax: buyGood <goodId> <sellerId>");
         }
         return jo;
     }
 
     private JSONObject intentionToSell(String command) {
-        return actionGoodSeller(command, "Seller");
+        return actionGoodSeller(command, "Seller", "intentionToSell <goodId>");
     }
 
     private JSONObject getStateOfGood(String command) {
-        return actionGoodSeller(command, "Buyer");
+        return actionGoodSeller(command, "Buyer", "getStateOfGood <goodId>");
     }
 
     private JSONObject buyGood(String command) {
@@ -221,7 +227,7 @@ public class HdsClient {
             jo.put("Buyer", cmds[2]);
         }
         else {
-            jo.put("Action", "Invalid command");
+            jo.put("Action", "Wrong Syntax: transferGood <goodId> <buyerId>");
         }
         return jo;
     }

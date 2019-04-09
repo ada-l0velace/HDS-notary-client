@@ -30,7 +30,7 @@ public class DatabaseManager {
                 conn = DriverManager.getConnection(url);
             }
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            //System.out.println(e.getMessage());
         }
     }
 
@@ -42,7 +42,7 @@ public class DatabaseManager {
             pstmt.setString(1, hash);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            //System.out.println(e.getMessage());
         }
     }
 
@@ -57,7 +57,7 @@ public class DatabaseManager {
                 return false;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return false;
         }
         return true;

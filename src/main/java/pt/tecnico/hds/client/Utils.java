@@ -54,7 +54,7 @@ public class Utils {
     }
 
     public static Key read(String keyPath) throws IOException {
-        System.out.println("Reading key from file " + keyPath + " ...");
+        //System.out.println("Reading key from file " + keyPath + " ...");
         FileInputStream fis = new FileInputStream(keyPath);
         byte[] encoded = new byte[fis.available()];
         fis.read(encoded);
@@ -68,7 +68,7 @@ public class Utils {
             return verifySignWithPubKey(message, signedMessage, loadedKey);
         }
         catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return false;
     }
@@ -86,7 +86,7 @@ public class Utils {
             return sig.verify(new BASE64Decoder().decodeBuffer(signedMessage));
         }
         catch (Exception e) {
-            e.printStackTrace();
+           //e.printStackTrace();
         }
         return false;
     }
@@ -108,7 +108,7 @@ public class Utils {
             return new BASE64Encoder().encode(sig.sign());
         }
         catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return "";
     }
