@@ -27,5 +27,5 @@ $ mvn clean install -DskipTests exec:java
 
 ### Run client 2 (up to 10):
 ```bash
-$ mvn clean install -DskipTests exec:java -Dexec.args="2"
+$ mvn -DskipTests exec:java -Dexec.args="2"
 ```
