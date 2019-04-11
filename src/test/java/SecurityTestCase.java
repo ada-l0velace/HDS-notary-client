@@ -245,28 +245,7 @@ public class SecurityTestCase extends BaseTest {
         Assert.assertEquals("NO", jsonObj.getString("Action"));
 
     }
-
-    @Test
-    public void testManInTheMiddleInvalidCommand() throws Exception {
-        assumeTrue("Server is not Up",serverIsUp());
-        String seller = "user2";
-        int portSeller = 3999+2;
-        HdsClient cSeller = new HdsClient(seller, portSeller);
-
-        JSONObject mitmJson =cSeller.sendJson("a");
-
-        //doing the man in the middle
-        JSONObject manInTheMiddleJson = new JSONObject(mitmJson.getString("Message"));
-        manInTheMiddleJson.put("Action","b");
-        mitmJson.put("Message", manInTheMiddleJson.toString());
-
-        // checking the servers answer
-        String serverAnswer = sendTo("localhost", serverPort, mitmJson.toString());
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("NO", jsonObj.getString("Action"));
-    }
-
+    
     @Test
     public void testServerResponseManInTheMiddle() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
@@ -294,4 +273,4 @@ public class SecurityTestCase extends BaseTest {
 
 
 
-    }
+}

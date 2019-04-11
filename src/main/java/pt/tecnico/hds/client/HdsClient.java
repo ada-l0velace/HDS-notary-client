@@ -90,6 +90,9 @@ public class HdsClient {
                         System.out.println(new JSONObject(jo.getString("Message")).getString("Action"));
                         continue;
                     }
+                    if (out.contains("Invalid Command")) {
+                        continue;
+                    }
 
                     if (new JSONObject(jo.getString("Message")).getString("Action").equals("buyGood")) {
 
