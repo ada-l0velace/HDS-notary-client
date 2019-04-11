@@ -25,7 +25,7 @@ $ mvn clean install -Dtest=SecurityTestCase#testManInTheMiddleAttackGetStateOfGo
 $ mvn clean install -DskipTests exec:java
 ```
 
-### Run client 2:
+### Run client 2 (up to 10):
 ```bash
 $ mvn clean install -DskipTests exec:java -Dexec.args="2"
 ```
