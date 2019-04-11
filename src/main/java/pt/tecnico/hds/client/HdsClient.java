@@ -1,4 +1,5 @@
 package pt.tecnico.hds.client;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -98,6 +99,7 @@ public class HdsClient {
 
                         int clientPort = _myMap.get(tosend.split(" ")[2]);
                         String answerS = connectToClient(host, clientPort, jo);
+                        //System.out.println(answerS);
                         JSONObject serverJ = new JSONObject(answerS);
                         if(validateServerRequest(serverJ)) {
                             DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverJ.getString("Message")));
@@ -113,9 +115,11 @@ public class HdsClient {
                     System.out.println(s.toString() + " "+ out);
                     // printing date or time as requested by client
                     String received = dis.readUTF();
-                    JSONObject serverAnswer = new JSONObject(received);
-
-                    if(validateServerRequest(serverAnswer)) {
+                    JSONObject serverAnswer = null;
+                    if (isJSONValid(received)) {
+                        serverAnswer = new JSONObject(received);
+                    }
+                    if(isJSONValid(received) && validateServerRequest(serverAnswer)) {
                         DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
                         System.out.println(received);
                     }
@@ -192,6 +196,19 @@ public class HdsClient {
         return answer;
     }
 
+    private boolean isJSONValid(String test) {
+        try {
+            new JSONObject(test);
+        } catch (JSONException ex) {
+
+            try {
+                new JSONArray(test);
+            } catch (JSONException ex1) {
+                return false;
+            }
+        }
+        return true;
+    }
     private JSONObject actionGoodSeller(String command, String s, String error) {
         String [] cmds = command.split(" ");
         JSONObject jo = new JSONObject();
