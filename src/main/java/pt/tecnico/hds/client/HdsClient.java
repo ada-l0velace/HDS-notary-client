@@ -116,10 +116,11 @@ public class HdsClient {
                     // printing date or time as requested by client
                     String received = dis.readUTF();
                     JSONObject serverAnswer = null;
-                    if (isJSONValid(received)) {
+                    Boolean isJson = isJSONValid(received);
+                    if (isJson) {
                         serverAnswer = new JSONObject(received);
                     }
-                    if(isJSONValid(received) && validateServerRequest(serverAnswer)) {
+                    if(isJson && validateServerRequest(serverAnswer)) {
                         DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
                         System.out.println(received);
                     }
