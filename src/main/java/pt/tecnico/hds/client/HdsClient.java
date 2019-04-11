@@ -97,7 +97,15 @@ public class HdsClient {
                     if (new JSONObject(jo.getString("Message")).getString("Action").equals("buyGood")) {
 
                         int clientPort = _myMap.get(tosend.split(" ")[2]);
-                        connectToClient(host, clientPort, jo);
+                        String answerS = connectToClient(host, clientPort, jo);
+                        JSONObject serverJ = new JSONObject(answerS);
+                        if(validateServerRequest(serverJ)) {
+                            DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverJ.getString("Message")));
+                            System.out.println(answerS);
+                        }
+                        else {
+                            System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
+                        }
                         continue;
                     }
 
@@ -151,7 +159,7 @@ public class HdsClient {
                 System.out.println("Client " + s + " sends " + jo.toString());
                 dos.writeUTF(jo.toString());
                 String received = dis.readUTF();
-                System.out.println(received);
+                //System.out.println(received);
                 /*if(port != 19999)h {
                     System.out.println("Client " + s + " sends " + received);
                     dos.writeUTF(received);
