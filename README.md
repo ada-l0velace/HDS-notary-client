@@ -15,7 +15,7 @@ $ mvn clean install -Dtest=SecurityTestCase
 
 ### Run a single test
 ```bash
-$ mvn clean install -Dtest=SecurityTestCase#testManInTheMiddleInvalidCommand
+$ mvn clean install -Dtest=SecurityTestCase#testManInTheMiddleAttackGetStateOfGood
 ```
 
 # Run client without any tests
