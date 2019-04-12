@@ -254,7 +254,9 @@ public class SecurityTestCase extends BaseTest {
         HdsClient cSeller = new HdsClient(seller, portSeller);
         String serverAnswer = sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
         JSONObject j = new JSONObject(serverAnswer);
-        j.put("Good", "w");
+        JSONObject message = new JSONObject(j.getString("Message"));
+	message.put("Good", "w");
+	j.put("Message", message.toString());
         Assert.assertFalse("Client is not detecting man in the middle",cSeller.validateServerRequest(j));
     }
 
