@@ -43,7 +43,7 @@ public class RSAKeyGenerator {
         // get an AES private key
         System.out.println("Generating RSA key ..." );
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-        keyGen.initialize(1024);
+        keyGen.initialize(2048);
         KeyPair keys = keyGen.generateKeyPair();
         System.out.println("Finish generating RSA keys");
         
