@@ -30,8 +30,13 @@ public class HdsClient {
 
     public boolean validateServerRequest(JSONObject serverAnswer) {
         String hash = Utils.getSHA256(serverAnswer.getString("Message"));
-        return Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), "assymetricKeys/server.pub")
+        Boolean b = Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), "assymetricKeys/server.pub")
                 && DatabaseManager.getInstance().verifyReplay(hash);
+        if (b) {
+            DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
+        }
+
+        return b;
     }
 
     private void initUsers() {
@@ -102,7 +107,7 @@ public class HdsClient {
                         //System.out.println(answerS);
                         JSONObject serverJ = new JSONObject(answerS);
                         if(validateServerRequest(serverJ)) {
-                            DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverJ.getString("Message")));
+                            //DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverJ.getString("Message")));
                             System.out.println(answerS);
                         }
                         else {
@@ -121,7 +126,7 @@ public class HdsClient {
                         serverAnswer = new JSONObject(received);
                     }
                     if(isJson && validateServerRequest(serverAnswer)) {
-                        DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
+                        //DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
                         System.out.println(received);
                     }
                     else {
