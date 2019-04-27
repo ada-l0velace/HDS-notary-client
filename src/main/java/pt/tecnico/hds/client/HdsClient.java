@@ -17,6 +17,7 @@ public class HdsClient {
     public String _name;
     public int _port;
     public Map<String,Integer> _myMap = new HashMap<String,Integer>();
+    public String serverPublicKey;
     public HdsClient(String name, int port) {
         _name = name;
         _port = port;
@@ -25,12 +26,16 @@ public class HdsClient {
         if (!Files.exists(Paths.get("db"))) {
             new File("db").mkdirs();
         }
+        if (Main.debug)
+            serverPublicKey = "assymetricKeys/serverDebug.pub";
+        else
+            serverPublicKey = "assymetricKeys/server.pub";
         DatabaseManager.getInstance().createDatabase();
     }
 
     public boolean validateServerRequest(JSONObject serverAnswer) {
         String hash = Utils.getSHA256(serverAnswer.getString("Message"));
-        Boolean b = Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), "assymetricKeys/server.pub")
+        Boolean b = Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), serverPublicKey)
                 && DatabaseManager.getInstance().verifyReplay(hash);
         if (b) {
             DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));

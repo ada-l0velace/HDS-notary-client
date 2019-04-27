@@ -6,7 +6,6 @@ import java.sql.*;
 
 public class DatabaseManager {
     private static DatabaseManager databaseManager;
-    private static Connection conn = null;
     private final String url = "jdbc:sqlite:db/client.db";
     // static method to create instance of Singleton class
     public static DatabaseManager getInstance() {
@@ -18,6 +17,7 @@ public class DatabaseManager {
 
     public void createDatabase() {
         String requests = "CREATE TABLE IF NOT EXISTS requests(requestId text PRIMARY KEY);";
+        Connection conn;
         try {
             if (!Files.exists(Paths.get("db/hds.db"))) {
                 conn = DriverManager.getConnection(url);
@@ -29,6 +29,7 @@ public class DatabaseManager {
             else{
                 conn = DriverManager.getConnection(url);
             }
+            conn.close();
         } catch (SQLException e) {
             //System.out.println(e.getMessage());
         }
@@ -36,11 +37,13 @@ public class DatabaseManager {
 
     public void addToRequests(String hash){
         String sql = "INSERT INTO requests(requestId) Values(?)";
-
+        Connection conn;
         try {
+            conn = DriverManager.getConnection(url);
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, hash);
             pstmt.executeUpdate();
+            conn.close();
         } catch (SQLException e) {
             //System.out.println(e.getMessage());
         }
@@ -48,11 +51,14 @@ public class DatabaseManager {
 
     public boolean verifyReplay(String hash) {
         String sql = "SELECT requestId FROM requests WHERE requestId=?";
+        Connection conn;
         try {
+            conn = DriverManager.getConnection(url);
             PreparedStatement pstmt = conn.prepareStatement(sql);
             System.out.println(hash);
             pstmt.setString(1, hash);
             ResultSet rs = pstmt.executeQuery();
+            conn.close();
             if (rs.next()) {
                 return false;
             }
