@@ -52,9 +52,10 @@ public class ClientServiceTest extends BaseTest {
         new ClientCmdExpectations(Arrays.asList("getStateOfGood good1", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
         HdsClient cSeller = new HdsClient("user1", 3999+1);
-        cSeller.connectToServer("localhost", 19999);
+        cSeller.runCommands();
 
         // getStateOfGood chain
+        System.out.println(cSeller.requests.toString());
         commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user1.pub", 0);
 
         getStateOfGoodChecker(cSeller.requests, "user5", "good1", "false", 3);
@@ -68,12 +69,12 @@ public class ClientServiceTest extends BaseTest {
         assumeTrue("Server is not Up",serverIsUp());
 
         HdsClient cSeller = new HdsClient("user5", 3999+5);
-        cSeller.connectToServer("localhost", 19999);
+        cSeller.runCommands();
 
         // intentionToSell chain
         commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user5.pub", 0);
         intentionToSellChecker(cSeller.requests, "YES", 3);
-
+        System.out.println(cSeller.requests);
         // getStateOfGood chain
         commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user5.pub", 4);
         getStateOfGoodChecker(cSeller.requests, "user5", "good1", "true", 7);
@@ -88,7 +89,7 @@ public class ClientServiceTest extends BaseTest {
         assumeTrue("Server is not Up",serverIsUp());
 
         HdsClient cSeller = new HdsClient("user5", 3999+5);
-        cSeller.connectToServer("localhost", 19999);
+        cSeller.runCommands();
 
         // intentionToSell chain
         commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user5.pub", 0);
@@ -104,7 +105,7 @@ public class ClientServiceTest extends BaseTest {
         assumeTrue("Server is not Up",serverIsUp());
 
         HdsClient cSeller = new HdsClient("user1", 3999+1);
-        cSeller.connectToServer("localhost", 19999);
+        cSeller.runCommands();
 
         // intentionToSell chain
         commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user1.pub", 0);
@@ -121,8 +122,8 @@ public class ClientServiceTest extends BaseTest {
         HdsClient _cSeller = new HdsClient("user1", 3999+1);
         HdsClient _cBuyer = new HdsClient("user3", 3999+3);
 
-        _cSeller.connectToServer("localhost", 19999);
-        _cBuyer.connectToServer("localhost", 19999);
+        _cSeller.runCommands();
+        _cBuyer.runCommands();
 
         // intentionToSell chain
         commandSignatureChecker(_cSeller.requests, _cSeller.serverPublicKey, "user1.pub", 0);
@@ -143,8 +144,8 @@ public class ClientServiceTest extends BaseTest {
         HdsClient _cSeller = new HdsClient("user1", 3999+1);
         HdsClient _cBuyer = new HdsClient("user3", 3999+3);
 
-        _cSeller.connectToServer("localhost", 19999);
-        _cBuyer.connectToServer("localhost", 19999);
+        _cSeller.runCommands();
+        _cBuyer.runCommands();
 
         // intentionToSell chain
         commandSignatureChecker(_cSeller.requests, _cSeller.serverPublicKey, "user1.pub", 0);
@@ -173,8 +174,8 @@ public class ClientServiceTest extends BaseTest {
         HdsClient cSeller = new HdsClient(seller, portSeller);
         HdsClient cOffSeller = new HdsClient(offseller, portOffSeller);
 
-        cOffSeller.connectToServer("localhost", 19999);
-        cBuyer.connectToServer("localhost", 19999);
+        cOffSeller.runCommands();
+        cBuyer.runCommands();
 
 
         // intentionToSell chain
@@ -206,7 +207,7 @@ public class ClientServiceTest extends BaseTest {
         int portBuyer = 3999+9;
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
 
-        cBuyer.connectToServer("localhost", 19999);
+        cBuyer.runCommands();
 
 
         // intentionToSell chain
@@ -238,8 +239,8 @@ public class ClientServiceTest extends BaseTest {
         HdsClient cSeller = new HdsClient(seller, portSeller);
 
 
-        cSeller.connectToServer("localhost", 19999);
-        cBuyer.connectToServer("localhost", 19999);
+        cSeller.runCommands();
+        cBuyer.runCommands();
 
         // intentionToSell chain
         Assert.assertEquals(8,cSeller.requests.length());
@@ -271,7 +272,7 @@ public class ClientServiceTest extends BaseTest {
         HdsClient cSeller = new HdsClient(seller, portSeller);
 
 
-        cBuyer.connectToServer("localhost", 19999);
+        cBuyer.runCommands();
 
         // TransferGood chain
         Assert.assertEquals(4,cSeller.requests.length());
@@ -300,7 +301,7 @@ public class ClientServiceTest extends BaseTest {
         HdsClient cSeller = new HdsClient(seller, portSeller);
 
 
-        cBuyer.connectToServer("localhost", 19999);
+        cBuyer.runCommands();
 
         // TransferGood chain
         Assert.assertEquals(4,cSeller.requests.length());
@@ -329,8 +330,8 @@ public class ClientServiceTest extends BaseTest {
         cBuyer._myMap.put("user30", 3999+30);
         cSeller._myMap.put("user30", 3999+30);
 
-        cSeller.connectToServer("localhost", 19999);
-        cBuyer.connectToServer("localhost", 19999);
+        cSeller.runCommands();
+        cBuyer.runCommands();
 
         // intentionToSell chain
         Assert.assertEquals(8,cSeller.requests.length());
@@ -363,8 +364,8 @@ public class ClientServiceTest extends BaseTest {
 
         cBuyer._myMap.put("user30", 3999+30);
         cSeller._myMap.put("user30", 3999+30);
-        cSeller.connectToServer("localhost", 19999);
-        cBuyer.connectToServer("localhost", 19999);
+        cSeller.runCommands();
+        cBuyer.runCommands();
 
         // intentionToSell chain
         Assert.assertEquals(8,cSeller.requests.length());

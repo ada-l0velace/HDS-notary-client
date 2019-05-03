@@ -19,11 +19,12 @@ public class DatabaseManager {
         String requests = "CREATE TABLE IF NOT EXISTS requests(requestId text PRIMARY KEY);";
         Connection conn;
         try {
-            if (!Files.exists(Paths.get("db/hds.db"))) {
+            if (!Files.exists(Paths.get("db/client.db"))) {
                 conn = DriverManager.getConnection(url);
                 Statement stmt4 = conn.createStatement();
+                //Statement stmt5 = conn.createStatement();
                 stmt4.execute(requests);
-
+                //stmt5.execute("PRAGMA journal_mode = WAL;");
                 //populate();
             }
             else{

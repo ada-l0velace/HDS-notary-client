@@ -60,18 +60,14 @@ public class HdsServerClient implements Runnable {
             this.dos.close();
         }
         catch (java.net.SocketException socketEx) {
-            socketEx.printStackTrace();
+            _client.logger.error(socketEx.getMessage());
+            //socketEx.printStackTrace();
             //Thread.currentThread().interrupt();
             //break;
         }
         catch (Exception e) {
-            e.printStackTrace();
-            try {
-                dos.writeUTF("Invalid input");
-            }
-            catch (IOException e1) {
-                e1.printStackTrace();
-            }
+            _client.logger.error(e.getMessage());
+            //e.printStackTrace();
             //break;
         }
         //}

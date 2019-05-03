@@ -59,12 +59,10 @@ public abstract class BaseTest extends TestCase {
     }
 
     protected DatabaseOperation getSetUpOperation() throws Exception {
-        killServers();
         return DatabaseOperation.CLEAN_INSERT;
     }
 
     protected DatabaseOperation getTearDownOperation() throws Exception {
-        killServers();
         return DatabaseOperation.CLEAN_INSERT;
     }
 
@@ -146,12 +144,6 @@ public abstract class BaseTest extends TestCase {
         JSONObject jsonObj = new JSONObject(requests.getJSONObject(index).getString("Message"));
         has_parameters(jsonObj, Arrays.asList("Action", "Timestamp"));
         Assert.assertEquals(answer, jsonObj.getString("Action"));
-    }
-    public void killServers() {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        for (int i=3999; i<=3999+10;i++)
-            processBuilder.command("bash", "-c", "kill -9 $(lsof -t -i:"+ i + ")");
-
     }
 
     public String sendTo(HdsClient c, String hostname, int port, String payload) {

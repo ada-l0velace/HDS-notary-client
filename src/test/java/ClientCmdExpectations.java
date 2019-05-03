@@ -16,16 +16,14 @@ public final class ClientCmdExpectations extends Expectations {
                     int i = 0;
 
                     public String delegate() {
-                        if (i != cmd.size()-1)
-                            return cmd.get(i++);
-                        else {
+                        if (cmd.get(i).equals("Exit")) {
                             try {
-                                TimeUnit.MILLISECONDS.sleep(500);
+                                TimeUnit.MILLISECONDS.sleep(1000);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
-                            return cmd.get(i++);
                         }
+                        return cmd.get(i++);
                     }
                 };
                 this.times = cmd.size();

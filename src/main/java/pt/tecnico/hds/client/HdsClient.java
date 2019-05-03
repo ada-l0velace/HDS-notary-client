@@ -16,7 +16,7 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HdsClient {
+public class HdsClient implements ILibrary {
     public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
     public String _name;
     public int _port;
@@ -62,6 +62,7 @@ public class HdsClient {
     private void startServer() {
         Runnable runnable = new HdsServerClientStarter(_port, this);
         Thread thread = new Thread(runnable);
+
         thread.start();
         serverThread = thread;
     }
@@ -110,103 +111,53 @@ public class HdsClient {
         return "abcd";
     }
 
-    public void connectToServer(String host, int port) {
+    public void runCommands() {
         try {
             Scanner scn = new Scanner(System.in);
 
-            // getting localhost ip
-            InetAddress ip = InetAddress.getByName(host);
-
-            // establish the connection with server port 5056
-            Socket s = new Socket(ip, port);
-            // obtaining input and out streams
-            DataInputStream dis = new DataInputStream(s.getInputStream());
-            DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-
-            // the following loop performs the exchange of
-            // information between client and client handler
-
             while (true) {
                 try {
-                    //System.out.println(dis.readUTF());
-                    //System.out.println("What do you want?[transferGood | intentionToSell | buyGood | getStateOfGood]..\n" +
-                    //        "Type Exit to terminate connection.");
                     System.out.println("What do you want?[transferGood | intentionToSell | buyGood | getStateOfGood]..\n" +
                                     "Type Exit to terminate connection.");
-                    String tosend = "";
 
-                    tosend = scn.nextLine();
+                    String tosend = scn.nextLine();
 
                     if (tosend.equals("Exit")) {
-                        dos.close();
-                        dis.close();
-                        s.close();
+                        //dos.close();
+                        //dis.close();
+                        //s.close();
                         shutDown();
                         break;
                     }
                     //System.out.println(tosend);
 
                     JSONObject jo = this.sendJson(tosend);
-                    String out = jo.toString();
                     requests.put(jo);
+                    sendJson(jo);
 
-                    if(out.contains("Wrong Syntax")) {
+                    if(jo.toString().contains("Wrong Syntax")) {
                         System.out.println(new JSONObject(jo.getString("Message")).getString("Action"));
                         continue;
                     }
-                    if (out.contains("Invalid Command")) {
+                    /*if (out.contains("Invalid Command")) {
                         continue;
-                    }
+                    }*/
 
-                    if (new JSONObject(jo.getString("Message")).getString("Action").equals("buyGood")) {
-
-                        int clientPort = _myMap.get(tosend.split(" ")[2]);
-                        String answerS = connectToClient(host, clientPort, jo);
-                        //System.out.println(answerS);
-                        JSONObject serverJ = new JSONObject(answerS);
-                        if(validateServerRequest(serverJ)) {
-                            //DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverJ.getString("Message")));
-                            System.out.println(answerS);
-                            //requests += answerS+ "\n";
-                            requests.put(serverJ);
-                        }
-                        else {
-                            System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
-                        }
-                        continue;
-                    }
-
-                    dos.writeUTF(out);
-                    System.out.println(s.toString() + " "+ out);
-                    // printing date or time as requested by client
-                    String received = dis.readUTF();
-
-                    JSONObject serverAnswer = null;
-                    Boolean isJson = isJSONValid(received);
-                    if (isJson) {
-                        serverAnswer = new JSONObject(received);
-                    }
-                    if(isJson && validateServerRequest(serverAnswer)) {
-                        received = solveChallenge(serverAnswer, dis, dos);
-                        //DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
-                        System.out.println(received);
-                        requests.put(new JSONObject(received));
-                        //requests += received+ "\n";
-                    }
-                    else {
-                        System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
-                    }
 
                 }
-                catch (JSONException jE) {}
+                catch (JSONException jE) {
+
+                }
                 catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage());
+                    //e.printStackTrace();
                     //break;
                 }
             }
 
-        }catch(IOException e){
-            e.printStackTrace();
+        }catch(Exception e){
+            logger.error(e.getMessage());
+            //e.printStackTrace();
         }
 
     }
@@ -234,9 +185,9 @@ public class HdsClient {
                 if(port == 19999) {
                     System.out.println("Client " + s + " sends " + jo.toString());
                     dos.writeUTF(jo.toString());
+                    //System.out.println(_port);
                     String receivedChallenge = dis.readUTF();
                     JSONObject challenge = new JSONObject(receivedChallenge);
-                    System.out.println(receivedChallenge);
                     received = solveChallenge(challenge, dis, dos);
                     requests.put(new JSONObject(received));
                 }
@@ -271,7 +222,9 @@ public class HdsClient {
             // closing resources
 
         } catch(IOException e){
-            e.printStackTrace();
+            logger.error(e.getMessage());
+
+            //e.printStackTrace();
         }
         return answer;
     }
@@ -298,7 +251,10 @@ public class HdsClient {
             jo.put(s, _name);
         }
         else {
-            jo.put("Action", "Wrong Syntax: ");
+            if (s == "Seller")
+                jo.put("Action", "Wrong Syntax: intentionToSell <goodId>");
+            else
+                jo.put("Action", "Wrong Syntax: getStateOfGood <goodId>");
         }
         return jo;
     }
@@ -310,6 +266,7 @@ public class HdsClient {
             jo.put("Action", cmds[0]);
             jo.put("Good", cmds[1]);
             jo.put(s, _name);
+            jo.put("Seller", cmds[2]);
         }
         else {
             jo.put("Action", "Wrong Syntax: buyGood <goodId> <sellerId>");
@@ -317,19 +274,19 @@ public class HdsClient {
         return jo;
     }
 
-    private JSONObject intentionToSell(String command) {
+    private JSONObject buildMessageIntentionToSell(String command) {
         return actionGoodSeller(command, "Seller", "intentionToSell <goodId>");
     }
 
-    private JSONObject getStateOfGood(String command) {
+    private JSONObject buildMessageGetStateOfGood(String command) {
         return actionGoodSeller(command, "Buyer", "getStateOfGood <goodId>");
     }
 
-    private JSONObject buyGood(String command) {
+    private JSONObject buildMessageBuyGood(String command) {
         return actionBuyGood(command, "Buyer");
     }
 
-    private JSONObject transferGood(String command) {
+    private JSONObject buildMessageTransferGood(String command) {
         String [] cmds = command.split(" ");
         JSONObject jo = new JSONObject();
         if (cmds.length == 3) {
@@ -353,26 +310,25 @@ public class HdsClient {
     public JSONObject sendJson(String command) {
         JSONObject finalMessage = new JSONObject();
         if (command.startsWith("transferGood")) {
-            JSONObject jCommand = transferGood(command);
+            JSONObject jCommand = buildMessageTransferGood(command);
             jCommand.put("Timestamp", new java.util.Date().toString());
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("intentionToSell")) {
-            JSONObject jCommand = intentionToSell(command);
+            JSONObject jCommand = buildMessageIntentionToSell(command);
             jCommand.put("Timestamp", new java.util.Date().toString());
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("getStateOfGood")) {
-            JSONObject jCommand = getStateOfGood(command);
+            JSONObject jCommand = buildMessageGetStateOfGood(command);
             jCommand.put("Timestamp", new java.util.Date().toString());
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("buyGood")) {
-            //System.out.println(command.split(" ").length);
-            JSONObject jCommand = buyGood(command);
+            JSONObject jCommand = buildMessageBuyGood(command);
             jCommand.put("Timestamp", new java.util.Date().toString());
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
@@ -380,15 +336,79 @@ public class HdsClient {
 
         JSONObject jo = new JSONObject();
         jo.put("Action", "Invalid command");
-        finalMessage.put("Message", jo.toString());
-        finalMessage.put("Hash", Utils.getSHA256(jo.toString()));
-        return finalMessage;
+        return buildFinalMessage(jo.toString(), finalMessage);
     }
+
+    public JSONObject sendJson(JSONObject command) throws Exception {
+        String message = command.getString("Message");
+        JSONObject messageJson = new JSONObject(message);
+        switch (messageJson.getString("Action")) {
+            case "transferGood":
+                return transferGood(command);
+            case "intentionToSell":
+                return intentionToSell(command);
+            case "getStateOfGood":
+                return getStateOfGood(command);
+            case "buyGood":
+                return buyGood(command);
+        }
+        return null;
+    }
+
 
     public JSONObject sendJson(String command, JSONObject secondMessage) {
         JSONObject j0 = sendJson(command);
         j0.put("Message2",secondMessage.getString("Message"));
         j0.put("Hash2",secondMessage.getString("Hash"));
         return j0;
+    }
+
+    public JSONObject checkSignature(String serverResponse) throws Exception {
+        JSONObject serverJson = new JSONObject(serverResponse);
+
+        if(validateServerRequest(serverJson)) {
+            System.out.println(serverResponse);
+            return serverJson;
+        }
+        else {
+            System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
+            throw new Exception("Replay Attack");
+        }
+    }
+
+    @Override
+    public JSONObject getStateOfGood(JSONObject request) throws Exception {
+        String answerS = connectToClient("localhost", 19999, request);
+        return checkSignature(answerS);
+    }
+
+    @Override
+    public JSONObject buyGood(JSONObject request) throws Exception {
+        String tosend = new JSONObject(request.getString("Message")).getString("Seller");
+        int clientPort = _myMap.get(tosend);
+        String answerS = connectToClient("localhost", clientPort, request);
+        JSONObject serverJson = new JSONObject(answerS);
+
+        if(validateServerRequest(serverJson)) {
+            System.out.println(answerS);
+            requests.put(serverJson);
+            return serverJson;
+        }
+        else {
+            System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
+            throw new Exception("Replay Attack");
+        }
+    }
+
+    @Override
+    public JSONObject intentionToSell(JSONObject request) throws Exception {
+        String answerS = connectToClient("localhost", 19999, request);
+        return checkSignature(answerS);
+    }
+
+    @Override
+    public JSONObject transferGood(JSONObject request) throws Exception {
+        String answerS = connectToClient("localhost", 19999, request);
+        return checkSignature(answerS);
     }
 }
