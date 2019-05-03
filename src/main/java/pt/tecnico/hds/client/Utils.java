@@ -6,6 +6,7 @@ import sun.misc.BASE64Encoder;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -46,6 +47,28 @@ public class Utils {
         }
     }
 
+    public static String getSHA512(String input) {
+
+        try {
+
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            byte[] bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for(int i=0; i< bytes.length ;i++){
+                sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+            }
+            return sb.toString();
+        }
+
+        // For specifying wrong message digest algorithms
+        catch (NoSuchAlgorithmException e) {
+            System.out.println("Exception thrown"
+                    + " for incorrect algorithm: " + e);
+
+            return null;
+        }
+    }
+
     public static byte[] getBytesFromFile(String file) throws IOException {
         DataInputStream dis = new DataInputStream(new FileInputStream(file));
         byte[] privKeyBytes = new byte[(int)file.length()];
@@ -68,7 +91,7 @@ public class Utils {
             return verifySignWithPubKey(message, signedMessage, loadedKey);
         }
         catch (Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
         return false;
     }
@@ -86,7 +109,7 @@ public class Utils {
             return sig.verify(new BASE64Decoder().decodeBuffer(signedMessage));
         }
         catch (Exception e) {
-           //e.printStackTrace();
+           e.printStackTrace();
         }
         return false;
     }
@@ -108,7 +131,7 @@ public class Utils {
             return new BASE64Encoder().encode(sig.sign());
         }
         catch (Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
         return "";
     }

@@ -1,4 +1,6 @@
 package pt.tecnico.hds.client;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.PropertyConfigurator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,18 +11,24 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HdsClient {
+    public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
     public String _name;
     public int _port;
     public Map<String,Integer> _myMap = new HashMap<String,Integer>();
     public String serverPublicKey;
+    public JSONArray requests = new JSONArray();
+    public Thread serverThread;
+
     public HdsClient(String name, int port) {
         _name = name;
         _port = port;
+
         initUsers();
         startServer();
         if (!Files.exists(Paths.get("db"))) {
@@ -55,9 +63,51 @@ public class HdsClient {
         Runnable runnable = new HdsServerClientStarter(_port, this);
         Thread thread = new Thread(runnable);
         thread.start();
+        serverThread = thread;
     }
     public void shutDown() {
         System.exit(0);
+    }
+
+    public String solveChallenge(JSONObject serverAnswer, DataInputStream dis, DataOutputStream dos) throws IOException {
+        String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lower = upper.toLowerCase(Locale.ROOT);
+        String digits = "0123456789";
+        char[] alphanum = (digits).toCharArray();
+        String message = serverAnswer.getString("Message");
+        JSONObject challenge = new JSONObject(message);
+        String rs = challenge.getString("RandomString");
+        String hash = challenge.getString("SHA512");
+        String X;
+        System.out.println(serverAnswer.toString());
+        requests.put(serverAnswer);
+        //requests += serverAnswer.toString() + "\n";
+        for (char a:alphanum) {
+            for (char b:alphanum) {
+                for (char c:alphanum) {
+                    for (char d:alphanum) {
+                        X = ""+a+b+c+d;
+                        //System.out.println(X);
+                        if (Utils.getSHA512(X + rs).substring(0,32).equals(hash)) {
+                            JSONObject jCommand = new JSONObject();
+                            jCommand.put("Action", "Challenge");
+                            jCommand.put("User", _name);
+                            jCommand.put("Timestamp", new java.util.Date().toString());
+                            jCommand.put("Answer", X);
+                            String m = jCommand.toString();
+                            JSONObject jo = buildFinalMessage(m, new JSONObject());
+                            String toSend = jo.toString();
+                            System.out.println(toSend);
+                            requests.put(jo);
+                            dos.writeUTF(toSend);
+
+                            return dis.readUTF();
+                        }
+                    }
+                }
+            }
+        }
+        return "abcd";
     }
 
     public void connectToServer(String host, int port) {
@@ -79,8 +129,10 @@ public class HdsClient {
             while (true) {
                 try {
                     //System.out.println(dis.readUTF());
+                    //System.out.println("What do you want?[transferGood | intentionToSell | buyGood | getStateOfGood]..\n" +
+                    //        "Type Exit to terminate connection.");
                     System.out.println("What do you want?[transferGood | intentionToSell | buyGood | getStateOfGood]..\n" +
-                            "Type Exit to terminate connection.");
+                                    "Type Exit to terminate connection.");
                     String tosend = "";
 
                     tosend = scn.nextLine();
@@ -96,6 +148,7 @@ public class HdsClient {
 
                     JSONObject jo = this.sendJson(tosend);
                     String out = jo.toString();
+                    requests.put(jo);
 
                     if(out.contains("Wrong Syntax")) {
                         System.out.println(new JSONObject(jo.getString("Message")).getString("Action"));
@@ -114,6 +167,8 @@ public class HdsClient {
                         if(validateServerRequest(serverJ)) {
                             //DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverJ.getString("Message")));
                             System.out.println(answerS);
+                            //requests += answerS+ "\n";
+                            requests.put(serverJ);
                         }
                         else {
                             System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
@@ -125,14 +180,18 @@ public class HdsClient {
                     System.out.println(s.toString() + " "+ out);
                     // printing date or time as requested by client
                     String received = dis.readUTF();
+
                     JSONObject serverAnswer = null;
                     Boolean isJson = isJSONValid(received);
                     if (isJson) {
                         serverAnswer = new JSONObject(received);
                     }
                     if(isJson && validateServerRequest(serverAnswer)) {
+                        received = solveChallenge(serverAnswer, dis, dos);
                         //DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
                         System.out.println(received);
+                        requests.put(new JSONObject(received));
+                        //requests += received+ "\n";
                     }
                     else {
                         System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
@@ -141,13 +200,13 @@ public class HdsClient {
                 }
                 catch (JSONException jE) {}
                 catch (Exception e) {
-                    //e.printStackTrace();
+                    e.printStackTrace();
                     //break;
                 }
             }
 
         }catch(IOException e){
-            //e.printStackTrace();
+            e.printStackTrace();
         }
 
     }
@@ -171,14 +230,24 @@ public class HdsClient {
 
 
             try {
-                System.out.println("Client " + s + " sends " + jo.toString());
-                dos.writeUTF(jo.toString());
-                String received = dis.readUTF();
+                String received;
+                if(port == 19999) {
+                    System.out.println("Client " + s + " sends " + jo.toString());
+                    dos.writeUTF(jo.toString());
+                    String receivedChallenge = dis.readUTF();
+                    JSONObject challenge = new JSONObject(receivedChallenge);
+                    System.out.println(receivedChallenge);
+                    received = solveChallenge(challenge, dis, dos);
+                    requests.put(new JSONObject(received));
+                }
+                else {
+                    System.out.println("Client " + s + " sends " + jo.toString());
+                    dos.writeUTF(jo.toString());
+                    received = dis.readUTF();
+                    //requests.put(new JSONObject(received));
+                }
                 //System.out.println(received);
-                /*if(port != 19999)h {
-                    System.out.println("Client " + s + " sends " + received);
-                    dos.writeUTF(received);
-                }*/
+
                 answer = received;
                 s.close();
                 dis.close();
@@ -237,7 +306,6 @@ public class HdsClient {
     private JSONObject actionBuyGood(String command, String s) {
         String [] cmds = command.split(" ");
         JSONObject jo = new JSONObject();
-        System.out.println(cmds.length);
         if (cmds.length == 3 && _myMap.containsKey(cmds[2])) {
             jo.put("Action", cmds[0]);
             jo.put("Good", cmds[1]);

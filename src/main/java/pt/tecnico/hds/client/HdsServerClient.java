@@ -40,7 +40,11 @@ public class HdsServerClient implements Runnable {
             switch (received) {
                 case "buyGood" :
                     JSONObject j0 = _client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"), saved);
+                    _client.requests.put(j0);
                     String answer = _client.connectToClient("localhost", 19999, j0);
+                    //_client.requests.put(new JSONObject(answer));
+                    //System.out.println(_client.requests.toString());
+                    //System.out.println("-----------");
                     System.out.println(connection+" "+ answer);
                     dos.writeUTF(answer);
                     //Thread.sleep(1000);
@@ -56,7 +60,7 @@ public class HdsServerClient implements Runnable {
             this.dos.close();
         }
         catch (java.net.SocketException socketEx) {
-            //socketEx.printStackTrace();
+            socketEx.printStackTrace();
             //Thread.currentThread().interrupt();
             //break;
         }
@@ -66,7 +70,7 @@ public class HdsServerClient implements Runnable {
                 dos.writeUTF("Invalid input");
             }
             catch (IOException e1) {
-                //e1.printStackTrace();
+                e1.printStackTrace();
             }
             //break;
         }

@@ -55,7 +55,7 @@ public class DatabaseManager {
         try {
             conn = DriverManager.getConnection(url);
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            System.out.println(hash);
+            //System.out.println(hash);
             pstmt.setString(1, hash);
             ResultSet rs = pstmt.executeQuery();
             conn.close();

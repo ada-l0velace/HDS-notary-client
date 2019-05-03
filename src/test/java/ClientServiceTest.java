@@ -1,22 +1,12 @@
 import static org.junit.Assume.*;
-import org.dbunit.*;
 
-import org.dbunit.database.DatabaseConnection;
-import org.dbunit.database.QueryDataSet;
-import org.dbunit.dataset.IDataSet;
-import org.dbunit.dataset.xml.FlatXmlDataSet;
-import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
-import org.dbunit.operation.DatabaseOperation;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.*;
+import org.junit.runner.RunWith;
 import pt.tecnico.hds.client.HdsClient;
-import java.io.*;
-import java.net.*;
-import java.sql.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import mockit.Mocked;
+import mockit.integration.junit4.JMockit;
+import java.util.Arrays;
+import java.util.Scanner;
 /*
 QueryDataSet queryDataSet = new QueryDataSet(new DatabaseConnection(DriverManager.getConnection("jdbc:sqlite:../HDS-notary-server/db/hds.db")));
 queryDataSet.addTable("users", "SELECT userId FROM users");
@@ -25,11 +15,12 @@ queryDataSet.addTable("notary", "SELECT userId,goodsId,CASE WHEN LOWER(onSale) =
 FlatXmlDataSet.write(queryDataSet, new FileOutputStream("dbunitData.xml"));
  */
 
+
+@RunWith(JMockit.class)
 public class ClientServiceTest extends BaseTest {
 
-
-    public ClientServiceTest (String name) {
-        super( name );
+    public ClientServiceTest () {
+        super("");
     }
 
     /** * Load the data which will be inserted for the test * @return IDataSet */
@@ -56,370 +47,343 @@ public class ClientServiceTest extends BaseTest {
 
     }*/
 
+    @Test
+        public void testIsNotForSale(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("getStateOfGood good1", "Exit"), scn);
+        assumeTrue("Server is not Up",serverIsUp());
+        HdsClient cSeller = new HdsClient("user1", 3999+1);
+        cSeller.connectToServer("localhost", 19999);
 
-    public void insert(String goodsId, String userId) throws Exception {
-        String sql = "INSERT INTO notary(goodsId, userId, onSale) Values(?,?, FALSE )";
+        // getStateOfGood chain
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user1.pub", 0);
 
-        Connection conn = getConnection().getConnection(); //DriverManager.getConnection("jdbc:sqlite:../HDS-notary-server/db/hds.db");
-        try {
-            PreparedStatement pstmt = getConnection().getConnection().prepareStatement(sql);
-            pstmt.setString(1, goodsId);
-            pstmt.setString(2, userId);
-            pstmt.executeUpdate();
-            //conn.close();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage()+ " POODLE SUCKS");
-        }
+        getStateOfGoodChecker(cSeller.requests, "user5", "good1", "false", 3);
 
-    }
-
-    public void insert(String id, String type, String table) throws Exception{
-        String sql = "INSERT INTO " + table + "(" + type + ") Values (?)";
-
-        Connection conn = getConnection().getConnection();
-        try{
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, id);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage() + " WTFFF");
-        }
-    }
-
-    public Boolean serverIsUp() {
-        try {
-            Socket s = new Socket("localhost", serverPort);
-            s.close();
-            return true;
-        }
-        catch (ConnectException e) {
-            return false;
-        }
-        catch (Exception e) {
-            return false;
-        }
-    }
-
-    public String update(String goodsId) throws Exception {
-        String sql = "UPDATE notary SET onSale = ? WHERE goodsId = ?";
-
-        try (Connection conn = getConnection().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setBoolean(1, true);
-            pstmt.setString(2, goodsId);
-            pstmt.executeUpdate();
-            return "YES";
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return "NO";
-    }
-
-    public boolean isJSONValid(String test) {
-        try {
-            new JSONObject(test);
-        } catch (JSONException ex) {
-            // edited, to include @Arthur's comment
-            // e.g. in case JSONArray is valid as well...
-            try {
-                new JSONArray(test);
-            } catch (JSONException ex1) {
-                return false;
-            }
-        }
-        return true;
+        cSeller.serverThread.interrupt();
     }
 
     @Test
-    public void testIsNotForSale() throws Exception {
+    public void testIsForSale(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good1", "getStateOfGood good1", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
-        insert("good30", "user30");
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        HdsClient cSeller = new HdsClient("user30", 3999+30);
-        JSONObject jsonObj = cSeller.sendJson("getStateOfGood good30");
-        cSeller._myMap.put("user30", 3999+30);
-        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
 
-        String example = "{\"Message\": \"{\"Owner\":\"user1\",\"Good\":\"good1\",\"OnSale\":\"true\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        HdsClient cSeller = new HdsClient("user5", 3999+5);
+        cSeller.connectToServer("localhost", 19999);
 
-        Assert.assertEquals("The Owner value is wrong.","user30", jsonObj.getString("Owner"));
-        Assert.assertEquals("The Good value is wrong.","good30", jsonObj.getString("Good"));
-        Assert.assertEquals("The OnSale value is wrong.","false", jsonObj.getString("OnSale"));
+        // intentionToSell chain
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user5.pub", 0);
+        intentionToSellChecker(cSeller.requests, "YES", 3);
 
-        //Assert.assertEquals("{\"Owner\":\"user30\", \"Good\":\"good30\", \"OnSale\": \"False\"}", sendTo("localhost", serverPort, jsonObj.toString()));
+        // getStateOfGood chain
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user5.pub", 4);
+        getStateOfGoodChecker(cSeller.requests, "user5", "good1", "true", 7);
+
+        cSeller.serverThread.interrupt();
+    }
+
+
+    @Test
+    public void testIntentionToSellOutputSuccess(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good1", "Exit"), scn);
+        assumeTrue("Server is not Up",serverIsUp());
+
+        HdsClient cSeller = new HdsClient("user5", 3999+5);
+        cSeller.connectToServer("localhost", 19999);
+
+        // intentionToSell chain
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user5.pub", 0);
+        intentionToSellChecker(cSeller.requests, "YES", 3);
+
+
+        cSeller.serverThread.interrupt();
     }
 
     @Test
-    public void testIsForSale() throws Exception {
+    public void testIntentionToSellOutputFailure(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good1", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", "user30");
-
-        update("good30");
-        HdsClient cSeller = new HdsClient("user30", 3999+30);
-        JSONObject jsonObj = cSeller.sendJson("getStateOfGood good30");
-        cSeller._myMap.put("user30", 3999+30);
-        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
-        String example = "{\"Message\": \"{\"Owner\":\"user1\",\"Good\":\"good1\",\"OnSale\":\"true\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-
-        Assert.assertEquals("The Owner value is wrong.","user30", jsonObj.getString("Owner"));
-        Assert.assertEquals("The Good value is wrong.","good30", jsonObj.getString("Good"));
-        Assert.assertEquals("The OnSale value is wrong.","true", jsonObj.getString("OnSale"));
-
-    }
-
-    @Test
-    public void testIntentionToSellOutputSuccess() throws Exception {
-        assumeTrue("Server is not Up",serverIsUp());
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", "user30");
-
-        HdsClient cSeller = new HdsClient("user30", 3999+30);
-        cSeller._myMap.put("user30", 3999+30);
-        JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
-
-        //String serverAnswer = sendTo("localhost", serverPort, sendTo("localhost", serverPort, jsonObj.toString()));
-        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
-
-        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+", got: " + serverAnswer + "." + jsonObj,isJSONValid(serverAnswer));
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("YES", jsonObj.getString("Action"));
-
-        //Assert.assertEquals("YES", sendTo("localhost", serverPort, jsonObj.toString()));
-    }
-
-    @Test
-    public void testIntentionToSellOutputFailure() throws Exception {
-        assumeTrue("Server is not Up",serverIsUp());
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", "user30");
 
         HdsClient cSeller = new HdsClient("user1", 3999+1);
-        cSeller._myMap.put("user30", 3999+30);
-        JSONObject jsonObj = cSeller.sendJson("intentionToSell good30");
+        cSeller.connectToServer("localhost", 19999);
 
-        String serverAnswer = sendTo("localhost", serverPort, jsonObj.toString());
+        // intentionToSell chain
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user1.pub", 0);
+        intentionToSellChecker(cSeller.requests, "NO", 3);
 
-        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("User doesn't own this good.","NO", jsonObj.getString("Action"));
-
+        cSeller.serverThread.interrupt();
     }
 
     @Test
-    public void testIntentionToSellDatabaseSuccess() throws Exception {
+    public void testIntentionToSellDatabaseSuccess(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good7", "Exit", "getStateOfGood good7", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", "user30");
 
-        HdsClient _cSeller = new HdsClient("user30", 3999+30);
+        HdsClient _cSeller = new HdsClient("user1", 3999+1);
         HdsClient _cBuyer = new HdsClient("user3", 3999+3);
-        _cBuyer._myMap.put("user30", 3999+30);
-        JSONObject jsonObj = _cSeller.sendJson("intentionToSell good30"); //new JSONObject();
-        sendTo("localhost", serverPort, jsonObj.toString());
 
-        JSONObject jsonObj2 = _cBuyer.sendJson("getStateOfGood good30"); //new JSONObject();
-        String serverAnswer = sendTo("localhost", serverPort, jsonObj2.toString());
-        String example = "{\"Message\": \"{\"Owner\":\"user1\",\"Good\":\"good1\",\"OnSale\":\"true\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
+        _cSeller.connectToServer("localhost", 19999);
+        _cBuyer.connectToServer("localhost", 19999);
 
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
+        // intentionToSell chain
+        commandSignatureChecker(_cSeller.requests, _cSeller.serverPublicKey, "user1.pub", 0);
+        intentionToSellChecker(_cSeller.requests, "YES", 3);
 
-        Assert.assertEquals("The Owner value is wrong.","user30", jsonObj.getString("Owner"));
-        Assert.assertEquals("The Good value is wrong.","good30", jsonObj.getString("Good"));
-        Assert.assertEquals("The OnSale value is wrong.","true", jsonObj.getString("OnSale"));
-
+        // getStateOfGood chain
+        commandSignatureChecker(_cBuyer.requests, _cSeller.serverPublicKey, "user3.pub", 0);
+        getStateOfGoodChecker(_cBuyer.requests, "user1", "good7", "true", 3);
+        _cBuyer.serverThread.interrupt();
+        _cSeller.serverThread.interrupt();
     }
 
     @Test
-    public void testIntentionToSellDatabaseFailure() throws Exception {
+    public void testIntentionToSellDatabaseFailure(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good1", "Exit", "getStateOfGood good1", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", "user1");
 
-        HdsClient _cBuyer = new HdsClient("user2", 3999+2);
-        //HdsClient cSeller = new HdsClient("user30", 3999+30);
+        HdsClient _cSeller = new HdsClient("user1", 3999+1);
+        HdsClient _cBuyer = new HdsClient("user3", 3999+3);
 
-        JSONObject jsonObj = _cBuyer.sendJson("intentionToSell good30");
+        _cSeller.connectToServer("localhost", 19999);
+        _cBuyer.connectToServer("localhost", 19999);
 
-        sendTo("localhost", serverPort, jsonObj.toString());
-        JSONObject jsonObj2 = _cBuyer.sendJson("getStateOfGood good30");
+        // intentionToSell chain
+        commandSignatureChecker(_cSeller.requests, _cSeller.serverPublicKey, "user1.pub", 0);
+        intentionToSellChecker(_cSeller.requests, "NO", 3);
 
+        // getStateOfGood chain
+        commandSignatureChecker(_cBuyer.requests, _cSeller.serverPublicKey, "user3.pub", 0);
+        getStateOfGoodChecker(_cBuyer.requests, "user5", "good1", "false", 3);
 
-        String serverAnswer = sendTo("localhost", serverPort, jsonObj2.toString());
-
-        String example = "{\"Message\": \"{\"Owner\":\"user1\",\"Good\":\"good1\",\"OnSale\":\"true\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-
-        Assert.assertEquals("The Owner value is wrong.","user1", jsonObj.getString("Owner"));
-        Assert.assertEquals("The Good value is wrong.","good30", jsonObj.getString("Good"));
-        Assert.assertEquals("The OnSale value is wrong.","false", jsonObj.getString("OnSale"));
+        _cBuyer.serverThread.interrupt();
+        _cSeller.serverThread.interrupt();
     }
 
 
     @Test
-    public void testBuyGoodThatAClientDoesntOwn() throws Exception {
+    public void testBuyGoodThatAClientDoesntOwn(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good19", "Exit", "buyGood good19 user8", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
         String buyer = "user1";
-        String seller = "user2";
+        String seller = "user8";
         String offseller = "user3";
         int portBuyer = 3999+1;
-        int portSeller = 3999+2;
+        int portSeller = 3999+8;
         int portOffSeller = 3999+3;
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
         HdsClient cSeller = new HdsClient(seller, portSeller);
         HdsClient cOffSeller = new HdsClient(offseller, portOffSeller);
 
-        sendTo("localhost", serverPort, cOffSeller.sendJson("intentionToSell good19").toString());
-        String serverAnswer = sendTo("localhost", portSeller, cBuyer.sendJson("buyGood good19 "+ cSeller._name).toString());
+        cOffSeller.connectToServer("localhost", 19999);
+        cBuyer.connectToServer("localhost", 19999);
 
-        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("NO", jsonObj.getString("Action"));
+
+        // intentionToSell chain
+        Assert.assertEquals(4,cOffSeller.requests.length());
+        commandSignatureChecker(cOffSeller.requests, cOffSeller.serverPublicKey, "user3.pub", 0);
+        intentionToSellChecker(cOffSeller.requests, "YES", 3);
+
+        // TransferGood chain
+        Assert.assertEquals(4, cSeller.requests.length());
+        commandSignatureChecker(cSeller.requests, cOffSeller.serverPublicKey, "user8.pub","user1.pub", 0);
+        intentionToSellChecker(cSeller.requests, "NO", 3);
+
+        // BuyGood chain
+        Assert.assertEquals(2, cBuyer.requests.length());
+        isSigned(cBuyer.requests.getJSONObject(0), "assymetricKeys/user1.pub");
+        intentionToSellChecker(cBuyer.requests, "NO", 1);
+
+        cBuyer.serverThread.interrupt();
+        cSeller.serverThread.interrupt();
+        cOffSeller.serverThread.interrupt();
+
     }
 
     @Test
-    public void testBuyGoodOwnGoodFailure() throws Exception {
+    public void testBuyGoodOwnGoodFailure(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good3", "buyGood good3 user9", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
-        int port = 3999+30;
-        HdsClient h = new HdsClient("user30", port);
+        String buyer = "user9";
+        int portBuyer = 3999+9;
+        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
 
-        h._myMap.put("user30", 3999+30);
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", "user30");
+        cBuyer.connectToServer("localhost", 19999);
 
-        update("good30");
-        String send_to = h.sendJson("buyGood good30 "+ h._name).toString();
-        String serverAnswer = sendTo("localhost", port, send_to);
-        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("Users can't buy their own goods.","NO", jsonObj.getString("Action"));
+
+        // intentionToSell chain
+        Assert.assertEquals(10,cBuyer.requests.length());
+        commandSignatureChecker(cBuyer.requests, cBuyer.serverPublicKey, "user9.pub", 0);
+        intentionToSellChecker(cBuyer.requests, "YES", 3);
+
+        // TransferGood chain
+        commandSignatureChecker(cBuyer.requests, cBuyer.serverPublicKey, "user9.pub","user9.pub", 5);
+        intentionToSellChecker(cBuyer.requests, "NO", 8);
+
+        // BuyGood chain
+        isSigned(cBuyer.requests.getJSONObject(4), "assymetricKeys/user9.pub");
+        intentionToSellChecker(cBuyer.requests, "NO", 9);
+        cBuyer.serverThread.interrupt();
+
     }
 
     @Test
-    public void testBuyGoodSuccess() throws Exception {
+    public void testBuyGoodSuccess(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good12", "Exit", "buyGood good12 user10", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
         String buyer = "user1";
-        String seller = "user30";
+        String seller = "user10";
         int portBuyer = 3999+1;
-        int portSeller = 3999+30;
+        int portSeller = 3999+10;
+
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
         HdsClient cSeller = new HdsClient(seller, portSeller);
-        cBuyer._myMap.put(seller, portSeller);
-        cSeller._myMap.put(seller, portSeller);
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", seller);
-
-        update("good30");
 
 
-        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good30").toString());
-        String serverAnswer = sendTo("localhost", portSeller, cBuyer.sendJson("buyGood good30 "+ cSeller._name).toString());
+        cSeller.connectToServer("localhost", 19999);
+        cBuyer.connectToServer("localhost", 19999);
 
-        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("YES", jsonObj.getString("Action"));
+        // intentionToSell chain
+        Assert.assertEquals(8,cSeller.requests.length());
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user10.pub", 0);
+        intentionToSellChecker(cSeller.requests, "YES", 3);
 
+        // TransferGood chain
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user10.pub","user1.pub", 4);
+        intentionToSellChecker(cSeller.requests, "YES", 7);
+
+        // BuyGood chain
+        Assert.assertEquals(2,cBuyer.requests.length());
+        isSigned(cBuyer.requests.getJSONObject(0), "assymetricKeys/user1.pub");
+        intentionToSellChecker(cBuyer.requests, "YES", 1);
+        cBuyer.serverThread.interrupt();
+        cSeller.serverThread.interrupt();
     }
 
     @Test
-    public void testBuyGoodFailure() throws Exception {
+    public void testBuyGoodFailure(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("buyGood good15 user7", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
         String buyer = "user1";
-        String seller = "user30";
+        String seller = "user7";
         int portBuyer = 3999+1;
-        int portSeller = 3999+30;
+        int portSeller = 3999+7;
+
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
         HdsClient cSeller = new HdsClient(seller, portSeller);
-        cBuyer._myMap.put(seller, portSeller);
-        cSeller._myMap.put(seller, portSeller);
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", seller);
 
-        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good30 "+ cSeller._name).toString());
 
-        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("The good was not for sale.","NO", jsonObj.getString("Action"));
+        cBuyer.connectToServer("localhost", 19999);
+
+        // TransferGood chain
+        Assert.assertEquals(4,cSeller.requests.length());
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user7.pub","user1.pub", 0);
+        intentionToSellChecker(cSeller.requests, "NO", 3);
+
+        // BuyGood chain
+        Assert.assertEquals(2,cBuyer.requests.length());
+        isSigned(cBuyer.requests.getJSONObject(0), "assymetricKeys/user1.pub");
+        intentionToSellChecker(cBuyer.requests, "NO", 1);
+        //The good was not for sale.
+        cBuyer.serverThread.interrupt();
+        cSeller.serverThread.interrupt();
     }
 
     @Test
-    public void testBuyGoodDoesNotExist() throws Exception {
+    public void testBuyGoodDoesNotExist(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("buyGood good50 user6", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
         String buyer = "user1";
-        String seller = "user30";
+        String seller = "user6";
         int portBuyer = 3999+1;
-        int portSeller = 3999+30;
+        int portSeller = 3999+6;
+
         HdsClient cBuyer = new HdsClient(buyer, portBuyer);
         HdsClient cSeller = new HdsClient(seller, portSeller);
-        cBuyer._myMap.put(seller, portSeller);
-        cSeller._myMap.put(seller, portSeller);
-        insert("user30", "userId", "users");
-        insert("good25", seller);
 
-        String serverAnswer = sendTo("localhost", cSeller._port, cBuyer.sendJson("buyGood good29 "+ seller).toString());
 
-        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("The good does not exist","NO", jsonObj.getString("Action"));
+        cBuyer.connectToServer("localhost", 19999);
+
+        // TransferGood chain
+        Assert.assertEquals(4,cSeller.requests.length());
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user6.pub","user1.pub", 0);
+        intentionToSellChecker(cSeller.requests, "NO", 3);
+
+        // BuyGood chain
+        Assert.assertEquals(2,cBuyer.requests.length());
+        isSigned(cBuyer.requests.getJSONObject(0), "assymetricKeys/user1.pub");
+        intentionToSellChecker(cBuyer.requests, "NO", 1);
+        cBuyer.serverThread.interrupt();
+        cSeller.serverThread.interrupt();
     }
 
     @Test
-    public void testBuyGoodBuyerDoesNotExist() throws Exception {
+    public void testBuyGoodBuyerDoesNotExist(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good8", "Exit", "buyGood good8 user4", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
-        insert("user30", "userId", "users");
-        insert("good30", "goodsId", "goods");
-        insert("good30", "user30");
+        String buyer = "user30";
+        String seller = "user4";
+        int portBuyer = 3999+30;
+        int portSeller = 3999+4;
 
-        HdsClient cBuyer = new HdsClient("user33", 3999+1);
-        HdsClient cSeller = new HdsClient("user30", 3999+30);
+        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = new HdsClient(seller, portSeller);
         cBuyer._myMap.put("user30", 3999+30);
         cSeller._myMap.put("user30", 3999+30);
-        JSONObject j = cBuyer.sendJson("buyGood good30 "+ cSeller._name);
-        j.put("Buyer","user35");
-        String serverAnswer = sendTo("localhost", cSeller._port, j.toString());
 
-        String example = "{\"Message\": \"{\"Action\":\"NO\",\"Timestamp\":\"Fri Mar 15 20:04:35 WET 2019\"}\", \"Hash\":\"f6fdbaa28f500f67044569f83300b23ca9c76d060d2e5cb5abe067b6cad00f79\"}";
-        Assert.assertTrue("The server answer is not valid json. Example "+ example+".",isJSONValid(serverAnswer));
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("The Buyer does not exist: " + j.toString(),"NO", jsonObj.getString("Action"));
+        cSeller.connectToServer("localhost", 19999);
+        cBuyer.connectToServer("localhost", 19999);
+
+        // intentionToSell chain
+        Assert.assertEquals(8,cSeller.requests.length());
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user4.pub", 0);
+        intentionToSellChecker(cSeller.requests, "YES", 3);
+
+        // TransferGood chain
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user4.pub","user30.pub", 4);
+        intentionToSellChecker(cSeller.requests, "NO", 7);
+
+        // BuyGood chain
+        Assert.assertEquals(2,cBuyer.requests.length());
+        isSigned(cBuyer.requests.getJSONObject(0), "assymetricKeys/user30.pub");
+        intentionToSellChecker(cBuyer.requests, "NO", 1);
+        cBuyer.serverThread.interrupt();
+        cSeller.serverThread.interrupt();
+    }
+
+    @Test
+    public void testBuyGoodSellerDoesNotExist(@Mocked final Scanner scn) throws Exception {
+        new ClientCmdExpectations(Arrays.asList("intentionToSell good7", "Exit", "buyGood good11 user30", "Exit"), scn);
+        assumeTrue("Server is not Up",serverIsUp());
+        String buyer = "user1";
+        String seller = "user30";
+        int portBuyer = 3999+1;
+        int portSeller = 3999+30;
+
+        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = new HdsClient(seller, portSeller);
+
+        cBuyer._myMap.put("user30", 3999+30);
+        cSeller._myMap.put("user30", 3999+30);
+        cSeller.connectToServer("localhost", 19999);
+        cBuyer.connectToServer("localhost", 19999);
+
+        // intentionToSell chain
+        Assert.assertEquals(8,cSeller.requests.length());
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user30.pub", 0);
+        intentionToSellChecker(cSeller.requests, "NO", 3);
+
+        // TransferGood chain
+        commandSignatureChecker(cSeller.requests, cSeller.serverPublicKey, "user30.pub","user1.pub", 4);
+        intentionToSellChecker(cSeller.requests, "NO", 7);
+
+        // BuyGood chain
+        Assert.assertEquals(2,cBuyer.requests.length());
+        isSigned(cBuyer.requests.getJSONObject(0), "assymetricKeys/user1.pub");
+        intentionToSellChecker(cBuyer.requests, "NO", 1);
+        cBuyer.serverThread.interrupt();
+        cSeller.serverThread.interrupt();
+
     }
 
 }
-
 
 

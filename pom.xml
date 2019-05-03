@@ -12,6 +12,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <version.powermock>1.7.4</version.powermock>
+        <version.mockito>2.8.9</version.mockito>
+        <version.org.jmockit.jmockit>1.39</version.org.jmockit.jmockit>
+        <log4j.configuration>log4j.properties</log4j.configuration>
     </properties>
 
     <build>
@@ -52,6 +56,23 @@
             <version>20180813</version>
         </dependency>
         <dependency>
+            <groupId>org.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
+            <version>${version.org.jmockit.jmockit}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${version.mockito}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <version>${version.powermock}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
@@ -62,6 +83,17 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.25.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.5</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.dbunit/dbunit -->
         <dependency>
             <groupId>org.dbunit</groupId>
@@ -76,6 +108,7 @@
             <artifactId>derbyclient</artifactId>
             <version>10.14.1.0</version>
         </dependency>
+
 
     </dependencies>
     

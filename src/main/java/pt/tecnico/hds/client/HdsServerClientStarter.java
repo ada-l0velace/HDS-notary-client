@@ -19,7 +19,7 @@ public class HdsServerClientStarter implements Runnable {
         try {
             ServerSocket socket1 = new ServerSocket(_port);
             socket1.setReuseAddress(true);
-            System.out.println("HDS Client Server Starter Initialized");
+            //System.out.println("HDS Client Server Starter Initialized");
             while (true) {
                 Socket connection = socket1.accept();
 
@@ -32,7 +32,7 @@ public class HdsServerClientStarter implements Runnable {
             }
         }
         catch (Exception e) {
-            //System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 }
