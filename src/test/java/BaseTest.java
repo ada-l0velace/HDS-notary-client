@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import pt.tecnico.hds.client.HdsClient;
 import pt.tecnico.hds.client.Utils;
+import pt.tecnico.hds.client.exception.HdsClientException;
 
 import java.io.*;
 import java.net.ConnectException;
@@ -25,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public abstract class BaseTest extends TestCase {
+public abstract class BaseTest {
     private IDatabaseTester databaseTester;
     protected int serverPort = 19999;
     protected final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
@@ -34,8 +35,8 @@ public abstract class BaseTest extends TestCase {
     protected final PrintStream originalErr = System.err;
 
 
-    public BaseTest (String name) {
-        super( name );
+    public BaseTest () {
+        super();
     }
 
     protected IDataSet getDataSet() throws Exception {
@@ -134,10 +135,7 @@ public abstract class BaseTest extends TestCase {
 
     public void getStateOfGoodChecker(JSONArray requests, String user, String good, String onSale, int index) {
         JSONObject jsonObj = new JSONObject(requests.getJSONObject(index).getString("Message"));
-        has_parameters(jsonObj, Arrays.asList("Owner", "Good", "OnSale", "Timestamp"));
-        Assert.assertEquals("The Owner value is wrong." ,user, jsonObj.getString("Owner"));
-        Assert.assertEquals("The Good value is wrong.", good, jsonObj.getString("Good"));
-        Assert.assertEquals("The OnSale value is wrong.", onSale, jsonObj.getString("OnSale"));
+        checkGood(jsonObj, user, good, onSale);
     }
 
     public void intentionToSellChecker(JSONArray requests, String answer, int index) {
@@ -146,7 +144,25 @@ public abstract class BaseTest extends TestCase {
         Assert.assertEquals(answer, jsonObj.getString("Action"));
     }
 
-    public String sendTo(HdsClient c, String hostname, int port, String payload) {
+    public void checkAnswer(JSONObject request, String answer) {
+        JSONObject message = new JSONObject(request.getString("Message"));
+        has_parameters(message, Arrays.asList("Action", "Timestamp"));
+        Assert.assertEquals(answer, message.getString("Action"));
+    }
+
+    public void checkGood(JSONObject request, String user, String good, String onSale) {
+        JSONObject message;
+        if (request.has("Message"))
+            message = new JSONObject(request.getString("Message"));
+        else
+            message = request;
+        has_parameters(message, Arrays.asList("Owner", "Good", "OnSale", "Timestamp"));
+        Assert.assertEquals("The Owner value is wrong." ,user, message.getString("Owner"));
+        Assert.assertEquals("The Good value is wrong.", good, message.getString("Good"));
+        Assert.assertEquals("The OnSale value is wrong.", onSale, message.getString("OnSale"));
+    }
+
+    public String sendTo(HdsClient c, String hostname, int port, String payload) throws HdsClientException {
         boolean sent = false;
 
         try {

@@ -16,19 +16,19 @@ public final class ClientCmdExpectations extends Expectations {
                     int i = 0;
 
                     public String delegate() {
-                        if (cmd.get(i).equals("Exit")) {
+                        /*if (cmd.get(i).equals("Exit")) {
                             try {
                                 TimeUnit.MILLISECONDS.sleep(1000);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
-                        }
+                        }*/
                         return cmd.get(i++);
                     }
                 };
                 this.times = cmd.size();
             }
         };
-        new Expectations(System.class) {{ System.exit(anyInt); }};
+        //new Expectations(System.class) {{ System.exit(anyInt); }};
     }
 }

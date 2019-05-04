@@ -3,6 +3,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import pt.tecnico.hds.client.HdsClient;
 import pt.tecnico.hds.client.Utils;
+import pt.tecnico.hds.client.exception.HdsClientException;
+import pt.tecnico.hds.client.exception.ManInTheMiddleException;
+import pt.tecnico.hds.client.exception.ReplayAttackException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -11,26 +14,23 @@ import static org.junit.Assume.assumeTrue;
 
 public class SecurityTestCase extends BaseTest {
 
-    public SecurityTestCase (String name) {
-        super( name );
+    public SecurityTestCase () {
+        super();
     }
 
     @Test
     public void testIfClientIsSigningTheMessage() {
-        int port = 3999+1;
-        HdsClient h = new HdsClient("user1", port);
+        HdsClient h = ClientServiceTest.getClient("client1");//new HdsClient("user1", port);
         JSONObject response = h.sendJson("getStateOfGood good1");
         String message = response.getString("Message");
         String signedMessage = response.getString("Hash");
-        //String signedMessage = Utils.signWithPrivateKey(message, "assymetricKeys/user1");
-        //System.out.println(signedMessage);
         Assert.assertTrue("This message has not been signed by user1 and is subject to attacks.",Utils.verifySignWithPubKeyFile(message, signedMessage, "assymetricKeys/user1.pub"));
     }
 
     @Test
     public void testManInTheMiddleAttackIntentionToSell() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        HdsClient cSeller = new HdsClient("user1", 3999+1);
+        HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good7");
         JSONObject j0 = new JSONObject(jsonObj.getString("Message"));
         j0.put("Good","good21");
@@ -45,7 +45,7 @@ public class SecurityTestCase extends BaseTest {
     @Test
     public void testReplayAttackIntentionToSell() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        HdsClient cSeller = new HdsClient("user1", 3999+1);
+        HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
         JSONObject jsonObj = cSeller.sendJson("intentionToSell good7");
 
         String serverAnswer = sendTo(cSeller,"localhost", serverPort, jsonObj.toString());
@@ -63,12 +63,9 @@ public class SecurityTestCase extends BaseTest {
     @Test
     public void testManInTheMiddleAttackBuyGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        String buyer = "user1";
-        String seller = "user2";
-        int portBuyer = 3999+1;
         int portSeller = 3999+2;
-        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
-        HdsClient cSeller = new HdsClient(seller, portSeller);
+        HdsClient cBuyer = ClientServiceTest.getClient("client2");//new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
 
         sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
         JSONObject j0 = cBuyer.sendJson("buyGood good11 "+ cSeller._name);
@@ -87,12 +84,11 @@ public class SecurityTestCase extends BaseTest {
     @Test
     public void testReplayAttackBuyGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        String buyer = "user1";
-        String seller = "user2";
         int portBuyer = 3999+1;
         int portSeller = 3999+2;
-        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
-        HdsClient cSeller = new HdsClient(seller, portSeller);
+
+        HdsClient cBuyer = ClientServiceTest.getClient("client1");//new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
 
         // Seller sells the item
         sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
@@ -133,7 +129,8 @@ public class SecurityTestCase extends BaseTest {
     @Test
     public void testManInTheMiddleAttackGetStateOfGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        HdsClient cSeller = new HdsClient("user1", 3999+1);
+
+        HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
         JSONObject jsonObj = cSeller.sendJson("getStateOfGood good7");
         JSONObject j0 = new JSONObject(jsonObj.getString("Message"));
         j0.put("Good","good21");
@@ -149,7 +146,8 @@ public class SecurityTestCase extends BaseTest {
     @Test
     public void testReplayAttackGetStateOfGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        HdsClient cSeller = new HdsClient("user1", 3999+1);
+
+        HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
         JSONObject replayAttackJson = cSeller.sendJson("getStateOfGood good7");
         //System.out.println(j0.toString());
         String serverAnswer = sendTo(cSeller,"localhost", serverPort, replayAttackJson.toString());
@@ -170,12 +168,9 @@ public class SecurityTestCase extends BaseTest {
     @Test
     public void testManInTheMiddleTransferGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        String buyer = "user1";
-        String seller = "user2";
-        int portBuyer = 3999+1;
-        int portSeller = 3999+2;
-        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
-        HdsClient cSeller = new HdsClient(seller, portSeller);
+
+        HdsClient cBuyer = ClientServiceTest.getClient("client1");//new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
 
         sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
         sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good11").toString());
@@ -201,12 +196,9 @@ public class SecurityTestCase extends BaseTest {
     @Test
     public void testReplayAttackTransferGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        String buyer = "user1";
-        String seller = "user2";
-        int portBuyer = 3999+1;
-        int portSeller = 3999+2;
-        HdsClient cBuyer = new HdsClient(buyer, portBuyer);
-        HdsClient cSeller = new HdsClient(seller, portSeller);
+
+        HdsClient cBuyer = ClientServiceTest.getClient("client1");//new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
 
         sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
         JSONObject j0 = cBuyer.sendJson("buyGood good20 "+ cSeller._name);
@@ -246,33 +238,28 @@ public class SecurityTestCase extends BaseTest {
 
     }
     
-    @Test
-    public void testServerResponseManInTheMiddle() throws Exception {
+    @Test(expected=ManInTheMiddleException.class)
+    public void testServerResponseManInTheMiddle() throws HdsClientException {
         assumeTrue("Server is not Up",serverIsUp());
-        String seller = "user2";
-        int portSeller = 3999+2;
-        HdsClient cSeller = new HdsClient(seller, portSeller);
+        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
         String serverAnswer = sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
         JSONObject j = new JSONObject(serverAnswer);
         JSONObject message = new JSONObject(j.getString("Message"));
 	    message.put("Good", "w");
 	    j.put("Message", message.toString());
-        Assert.assertFalse("Client is not detecting man in the middle",cSeller.validateServerRequest(j));
+
+	    cSeller.validateServerRequest(j);
+        //Assert.assertFalse("Client is not detecting man in the middle",cSeller.validateServerRequest(j));
     }
 
-    @Test
-    public void testServerReplayAttack() throws Exception {
+    @Test(expected = ReplayAttackException.class)
+    public void testServerReplayAttack() throws HdsClientException {
         assumeTrue("Server is not Up",serverIsUp());
-        String seller = "user2";
-        int portSeller = 3999+2;
-        HdsClient cSeller = new HdsClient(seller, portSeller);
+        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
         String serverAnswer = sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+
         Assert.assertTrue("Something is wrong the server is not signing well", cSeller.validateServerRequest(new JSONObject(serverAnswer)));
-        Assert.assertFalse("Client is not validating replay attacks",cSeller.validateServerRequest(new JSONObject(serverAnswer)));
+        cSeller.validateServerRequest(new JSONObject(serverAnswer));
     }
-
-
-
-
 
 }

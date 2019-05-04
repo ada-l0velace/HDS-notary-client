@@ -1,13 +1,10 @@
 package pt.tecnico.hds.client;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.PropertyConfigurator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -15,6 +12,9 @@ import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pt.tecnico.hds.client.exception.HdsClientException;
+import pt.tecnico.hds.client.exception.ManInTheMiddleException;
+import pt.tecnico.hds.client.exception.ReplayAttackException;
 
 public class HdsClient implements ILibrary {
     public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
@@ -41,15 +41,25 @@ public class HdsClient implements ILibrary {
         DatabaseManager.getInstance().createDatabase();
     }
 
-    public boolean validateServerRequest(JSONObject serverAnswer) {
+    public boolean validateServerRequest(JSONObject serverAnswer) throws HdsClientException {
         String hash = Utils.getSHA256(serverAnswer.getString("Message"));
-        Boolean b = Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), serverPublicKey)
-                && DatabaseManager.getInstance().verifyReplay(hash);
+        Boolean signature = Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), serverPublicKey);
+        Boolean notReplayed = DatabaseManager.getInstance().verifyReplay(hash);
+        Boolean b = signature && notReplayed;
+
         if (b) {
             DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
+            return true;
         }
 
-        return b;
+        if (!notReplayed)  {
+            throw new ReplayAttackException(serverAnswer);
+        }
+
+        if (!signature)  {
+            throw new ManInTheMiddleException(serverAnswer);
+        }
+        return false;
     }
 
     private void initUsers() {
@@ -67,10 +77,11 @@ public class HdsClient implements ILibrary {
         serverThread = thread;
     }
     public void shutDown() {
-        System.exit(0);
+        /*System.exit(0);*/
     }
 
-    public String solveChallenge(JSONObject serverAnswer, DataInputStream dis, DataOutputStream dos) throws IOException {
+    public String solveChallenge(JSONObject serverAnswer, DataInputStream dis, DataOutputStream dos) throws IOException, HdsClientException {
+        validateServerRequest(serverAnswer);
         String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String lower = upper.toLowerCase(Locale.ROOT);
         String digits = "0123456789";
@@ -93,7 +104,7 @@ public class HdsClient implements ILibrary {
                             JSONObject jCommand = new JSONObject();
                             jCommand.put("Action", "Challenge");
                             jCommand.put("User", _name);
-                            jCommand.put("Timestamp", new java.util.Date().toString());
+                            jCommand.put("Timestamp", new java.util.Date().getTime());
                             jCommand.put("Answer", X);
                             String m = jCommand.toString();
                             JSONObject jo = buildFinalMessage(m, new JSONObject());
@@ -145,8 +156,13 @@ public class HdsClient implements ILibrary {
 
 
                 }
+                catch (HdsClientException e) {
+                    logger.error(e.getMessage());
+                    //System.exit(-1);
+                }
                 catch (JSONException jE) {
-
+                    logger.error(jE.getMessage());
+                    //System.exit(-1);
                 }
                 catch (Exception e) {
                     logger.error(e.getMessage());
@@ -164,67 +180,70 @@ public class HdsClient implements ILibrary {
 
     public String connectToClient(String host, int port, JSONObject jo) {
         String answer = "";
-        try {
-
-            // getting localhost ip
-            InetAddress ip = InetAddress.getByName(host);
-
-            // establish the connection with server port 5056
-            Socket s = new Socket(ip, port);
-            s.setSoTimeout(10*1000);
-            // obtaining input and out streams
-            DataInputStream dis = new DataInputStream(s.getInputStream());
-            DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-
-            // the following loop performs the exchange of
-            // information between client and client handler
-
-
+        while (true) {
             try {
-                String received;
-                if(port == 19999) {
-                    System.out.println("Client " + s + " sends " + jo.toString());
-                    dos.writeUTF(jo.toString());
-                    //System.out.println(_port);
-                    String receivedChallenge = dis.readUTF();
-                    JSONObject challenge = new JSONObject(receivedChallenge);
-                    received = solveChallenge(challenge, dis, dos);
-                    requests.put(new JSONObject(received));
+
+                // getting localhost ip
+                InetAddress ip = InetAddress.getByName(host);
+
+                // establish the connection with server port 5056
+                Socket s = new Socket(ip, port);
+                s.setSoTimeout(10 * 1000);
+                // obtaining input and out streams
+                DataInputStream dis = new DataInputStream(s.getInputStream());
+                DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+
+                // the following loop performs the exchange of
+                // information between client and client handler
+
+
+                try {
+                    String received;
+                    if (port == 19999) {
+                        System.out.println("Client " + s + " sends " + jo.toString());
+                        dos.writeUTF(jo.toString());
+                        //System.out.println(_port);
+                        String receivedChallenge = dis.readUTF();
+                        JSONObject challenge = new JSONObject(receivedChallenge);
+                        received = solveChallenge(challenge, dis, dos);
+                        requests.put(new JSONObject(received));
+                    } else {
+                        System.out.println("Client " + s + " sends " + jo.toString());
+                        dos.writeUTF(jo.toString());
+                        received = dis.readUTF();
+                        //requests.put(new JSONObject(received));
+                    }
+                    //System.out.println(received);
+
+                    answer = received;
+                    s.close();
+                    dis.close();
+                    dos.close();
+
+                } catch (java.net.SocketTimeoutException timeout) {
+                    timeout.printStackTrace();
+                    s.close();
+                    break;
+
+                } catch (java.io.EOFException e0) {
+                    e0.printStackTrace();
+                    s.close();
+                    break;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    s.close();
+                    break;
                 }
-                else {
-                    System.out.println("Client " + s + " sends " + jo.toString());
-                    dos.writeUTF(jo.toString());
-                    received = dis.readUTF();
-                    //requests.put(new JSONObject(received));
-                }
-                //System.out.println(received);
 
-                answer = received;
-                s.close();
-                dis.close();
-                dos.close();
 
+                break;
+                // closing resources
+
+            } catch (IOException e) {
+                logger.error(e.getMessage() + " " + port);
+                continue;
+                //e.printStackTrace();
             }
-            catch (java.net.SocketTimeoutException timeout) {
-                timeout.printStackTrace();
-                //break;
-            }
-            catch (java.io.EOFException e0) {
-                e0.printStackTrace();
-                //break;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                //break;
-            }
-
-            //s.close();
-            // closing resources
-
-        } catch(IOException e){
-            logger.error(e.getMessage());
-
-            //e.printStackTrace();
         }
         return answer;
     }
@@ -311,35 +330,37 @@ public class HdsClient implements ILibrary {
         JSONObject finalMessage = new JSONObject();
         if (command.startsWith("transferGood")) {
             JSONObject jCommand = buildMessageTransferGood(command);
-            jCommand.put("Timestamp", new java.util.Date().toString());
+            jCommand.put("Timestamp", new java.util.Date().getTime());
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("intentionToSell")) {
             JSONObject jCommand = buildMessageIntentionToSell(command);
-            jCommand.put("Timestamp", new java.util.Date().toString());
+            jCommand.put("Timestamp", new java.util.Date().getTime());
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("getStateOfGood")) {
             JSONObject jCommand = buildMessageGetStateOfGood(command);
-            jCommand.put("Timestamp", new java.util.Date().toString());
+            jCommand.put("Timestamp", new java.util.Date().getTime());
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("buyGood")) {
             JSONObject jCommand = buildMessageBuyGood(command);
-            jCommand.put("Timestamp", new java.util.Date().toString());
+            jCommand.put("Timestamp", new java.util.Date().getTime());
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
 
         JSONObject jo = new JSONObject();
         jo.put("Action", "Invalid command");
+        jo.put("Timestamp", new java.util.Date().getTime());
+
         return buildFinalMessage(jo.toString(), finalMessage);
     }
 
-    public JSONObject sendJson(JSONObject command) throws Exception {
+    public JSONObject sendJson(JSONObject command) throws HdsClientException {
         String message = command.getString("Message");
         JSONObject messageJson = new JSONObject(message);
         switch (messageJson.getString("Action")) {
@@ -363,27 +384,24 @@ public class HdsClient implements ILibrary {
         return j0;
     }
 
-    public JSONObject checkSignature(String serverResponse) throws Exception {
+    public JSONObject checkSignature(String serverResponse) throws HdsClientException {
         JSONObject serverJson = new JSONObject(serverResponse);
 
         if(validateServerRequest(serverJson)) {
             System.out.println(serverResponse);
             return serverJson;
         }
-        else {
-            System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
-            throw new Exception("Replay Attack");
-        }
+        throw new ManInTheMiddleException(serverJson);
     }
 
     @Override
-    public JSONObject getStateOfGood(JSONObject request) throws Exception {
+    public JSONObject getStateOfGood(JSONObject request) throws HdsClientException {
         String answerS = connectToClient("localhost", 19999, request);
         return checkSignature(answerS);
     }
 
     @Override
-    public JSONObject buyGood(JSONObject request) throws Exception {
+    public JSONObject buyGood(JSONObject request) throws HdsClientException {
         String tosend = new JSONObject(request.getString("Message")).getString("Seller");
         int clientPort = _myMap.get(tosend);
         String answerS = connectToClient("localhost", clientPort, request);
@@ -395,19 +413,18 @@ public class HdsClient implements ILibrary {
             return serverJson;
         }
         else {
-            System.out.println("The reply from the server is not signed by the server or there was a replay attack!");
-            throw new Exception("Replay Attack");
+            throw new ManInTheMiddleException(serverJson);
         }
     }
 
     @Override
-    public JSONObject intentionToSell(JSONObject request) throws Exception {
+    public JSONObject intentionToSell(JSONObject request) throws HdsClientException  {
         String answerS = connectToClient("localhost", 19999, request);
         return checkSignature(answerS);
     }
 
     @Override
-    public JSONObject transferGood(JSONObject request) throws Exception {
+    public JSONObject transferGood(JSONObject request) throws HdsClientException {
         String answerS = connectToClient("localhost", 19999, request);
         return checkSignature(answerS);
     }

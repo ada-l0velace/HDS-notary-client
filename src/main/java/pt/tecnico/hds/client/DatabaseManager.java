@@ -64,7 +64,7 @@ public class DatabaseManager {
                 return false;
             }
         } catch (SQLException e) {
-            //e.printStackTrace();
+            e.printStackTrace();
             return false;
         }
         return true;
