@@ -27,6 +27,7 @@ public class HdsClient implements ILibrary {
     public String serverPublicKey;
     public JSONArray requests = new JSONArray();
     public Thread serverThread;
+    HdsRegister _register = new HdsRegister();
 
     public HdsClient(String name, int port) {
         _name = name;
@@ -388,7 +389,24 @@ public class HdsClient implements ILibrary {
         }
         return null;
     }
+    public JSONObject write(JSONObject request) throws HdsClientException {
+        String answerS ="";
 
+        for (int i=0;i< NREPLICAS;i++) {
+            answerS = connectToClient("localhost", _serverPort + i, request);
+            if (answerS != null) {
+                checkSignature(answerS);
+                _register._acks.add(new RegisterValue(new JSONObject(answerS)));
+            }
+        }
+
+        if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
+            _register._acks = new ArrayList<RegisterValue>();
+            return new JSONObject(answerS);
+        }
+
+        return null;
+    }
 
     public JSONObject sendJson(String command, JSONObject secondMessage) {
         JSONObject j0 = sendJson(command);
@@ -409,8 +427,12 @@ public class HdsClient implements ILibrary {
 
     @Override
     public JSONObject getStateOfGood(JSONObject request) throws HdsClientException {
-        String answerS = connectToClient("localhost", _serverPort, request);
-        return checkSignature(answerS);
+        String answerS = "";
+        for (int i=0;i< NREPLICAS;i++) {
+            answerS = connectToClient("localhost", _serverPort+i, request);
+            checkSignature(answerS);
+        }
+        return new JSONObject(answerS);
     }
 
     @Override
@@ -437,19 +459,26 @@ public class HdsClient implements ILibrary {
 
     @Override
     public JSONObject intentionToSell(JSONObject request) throws HdsClientException  {
-        String answerS ="";
-        for (int i=0;i< NREPLICAS;i++)
-            answerS = connectToClient("localhost", _serverPort+i, request);
-        //String answerS = connectToClient("localhost", _serverPort, request);
-        return checkSignature(answerS);
+        return write(request);
     }
 
     @Override
     public JSONObject transferGood(JSONObject request) throws HdsClientException {
         String answerS ="";
-        for (int i=0;i< NREPLICAS;i++)
-            answerS = connectToClient("localhost", _serverPort+i, request);
-        return new JSONObject(answerS);
+
+        for (int i=0;i< NREPLICAS;i++) {
+            answerS = connectToClient("localhost", _serverPort + i, request);
+            if (answerS != null) {
+                _register._acks.add(new RegisterValue(new JSONObject(answerS)));
+            }
+        }
+
+        if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
+            _register._acks = new ArrayList<RegisterValue>();
+            return new JSONObject(answerS);
+        }
+
+        return null;
         //return checkSignature(answerS);
     }
 }
