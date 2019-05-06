@@ -255,7 +255,7 @@ public class ClientServiceTest extends BaseTest {
     }
 
     @Test
-    public void testBuyGoodSuccess(@Mocked final Scanner scn) throws Exception {
+    public void testBuyGoodSuccess() throws Exception {
         //new ClientCmdExpectations(Arrays.asList("intentionToSell good12", "Exit", "buyGood good12 user10", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
 

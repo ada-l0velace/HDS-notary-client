@@ -40,14 +40,11 @@ public class HdsServerClient implements Runnable {
             switch (received) {
                 case "buyGood" :
                     JSONObject j0 = _client.sendJson("transferGood "+ jsonObj.getString("Good") + " " + jsonObj.getString("Buyer"), saved);
-                    _client.requests.put(j0);
-                    String answer = _client.connectToClient("localhost", 19999, j0);
-                    //_client.requests.put(new JSONObject(answer));
-                    //System.out.println(_client.requests.toString());
-                    //System.out.println("-----------");
+                    //_client.requests.put(j0);
+
+                    String answer = _client.transferGood(j0).toString();//_client.connectToClient("localhost", 19999, j0);
                     System.out.println(connection+" "+ answer);
                     dos.writeUTF(answer);
-                    //Thread.sleep(1000);
                     System.out.println("Client " + this.connection + " disconnecting");
                     break;
 

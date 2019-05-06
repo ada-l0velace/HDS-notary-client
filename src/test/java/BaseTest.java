@@ -14,6 +14,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import pt.tecnico.hds.client.HdsClient;
+import pt.tecnico.hds.client.Main;
 import pt.tecnico.hds.client.Utils;
 import pt.tecnico.hds.client.exception.HdsClientException;
 
@@ -22,12 +23,14 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 
 public abstract class BaseTest {
-    private IDatabaseTester databaseTester;
+
+    private ArrayList<IDatabaseTester> databaseTester = new ArrayList<IDatabaseTester>();
     protected int serverPort = 19999;
     protected final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     protected final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
@@ -45,18 +48,22 @@ public abstract class BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        databaseTester = new JdbcDatabaseTester("org.sqlite.JDBC",
-                "jdbc:sqlite:../HDS-notary-server/db/hds.db", "", "");
-        IDataSet dataSet = getDataSet();
-        databaseTester.setDataSet( dataSet );
-        databaseTester.setSetUpOperation(getSetUpOperation());
-        databaseTester.onSetup();
+        for (int i = 0; i < Main.replicas; i++) {
+            databaseTester.add(new JdbcDatabaseTester("org.sqlite.JDBC",
+                    String.format("jdbc:sqlite:../HDS-notary-server/db/hds%d.db", i), "", ""));
+            IDataSet dataSet = getDataSet();
+            databaseTester.get(i).setDataSet(dataSet);
+            databaseTester.get(i).setSetUpOperation(getSetUpOperation());
+            databaseTester.get(i).onSetup();
+        }
     }
 
     @After
     public void tearDown() throws Exception {
-        databaseTester.setTearDownOperation(getTearDownOperation());
-        databaseTester.onTearDown();
+        for (int i = 0; i < Main.replicas; i++) {
+            databaseTester.get(i).setTearDownOperation(getTearDownOperation());
+            databaseTester.get(i).onTearDown();
+        }
     }
 
     protected DatabaseOperation getSetUpOperation() throws Exception {

@@ -22,147 +22,116 @@ public class SecurityTestCase extends BaseTest {
     public void testIfClientIsSigningTheMessage() {
         HdsClient h = ClientServiceTest.getClient("client1");//new HdsClient("user1", port);
         JSONObject response = h.sendJson("getStateOfGood good1");
-        String message = response.getString("Message");
-        String signedMessage = response.getString("Hash");
-        Assert.assertTrue("This message has not been signed by user1 and is subject to attacks.",Utils.verifySignWithPubKeyFile(message, signedMessage, "assymetricKeys/user1.pub"));
+        isSigned(response, h.getPublicKeyPath());
     }
 
     @Test
     public void testManInTheMiddleAttackIntentionToSell() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
-        JSONObject jsonObj = cSeller.sendJson("intentionToSell good7");
-        JSONObject j0 = new JSONObject(jsonObj.getString("Message"));
-        j0.put("Good","good21");
-        jsonObj.put("Message", j0.toString());
-        //System.out.println(j0.toString());
-        String serverAnswer = sendTo(cSeller,"localhost", serverPort, jsonObj.toString());
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("Message got changed in the middle of the connection, the server isn't validating the requests.","NO", jsonObj.getString("Action"));
+        JSONObject requestIST = cSeller.sendJson("intentionToSell good7");
+        JSONObject mitmIST = cSeller.sendJson("intentionToSell good7");
+        isSigned(requestIST, cSeller.getPublicKeyPath());
+        mitmIST.put("Message", requestIST.getString("Message"));
+        checkAnswer(cSeller.intentionToSell(mitmIST), "NO");
     }
 
     @Test
     public void testReplayAttackIntentionToSell() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
-        JSONObject jsonObj = cSeller.sendJson("intentionToSell good7");
 
-        String serverAnswer = sendTo(cSeller,"localhost", serverPort, jsonObj.toString());
-        JSONObject j0 = new JSONObject(serverAnswer);
-        j0 = new JSONObject(j0.getString("Message"));
-        Assert.assertEquals("If poodle didn't fuck up something then this should always pass","YES", j0.getString("Action"));
-        serverAnswer = sendTo(cSeller,"localhost", serverPort, jsonObj.toString());
-        System.out.println(serverAnswer);
+        JSONObject replayIST = cSeller.sendJson("intentionToSell good7");
+        isSigned(replayIST, cSeller.getPublicKeyPath());
 
-        j0 = new JSONObject(serverAnswer);
-        j0 = new JSONObject(j0.getString("Message"));
-        Assert.assertEquals("Replay attack detected.","NO", j0.getString("Action"));
+        checkAnswer(cSeller.intentionToSell(replayIST), "YES");
+        checkAnswer(cSeller.intentionToSell(replayIST), "NO");
     }
 
     @Test
     public void testManInTheMiddleAttackBuyGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        int portSeller = 3999+2;
-        HdsClient cBuyer = ClientServiceTest.getClient("client2");//new HdsClient(buyer, portBuyer);
-        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
+        HdsClient cBuyer = ClientServiceTest.getClient("client1");//new HdsClient(buyer, portBuyer);
+        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient("user1", 3999+1);
 
-        sendTo("localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
-        JSONObject j0 = cBuyer.sendJson("buyGood good11 "+ cSeller._name);
-        JSONObject j1 = new JSONObject(j0.getString("Message"));
-        j1.put("Good", "good20");
-        //System.out.println(j1.toString()+"||||||||||");
-        j0.put("Message",j1.toString());
+        JSONObject requestIST = cSeller.sendJson("intentionToSell good20");
+        isSigned(requestIST, cSeller.getPublicKeyPath());
+        checkAnswer(cSeller.intentionToSell(requestIST), "YES");
 
-        String serverAnswer = sendTo("localhost", portSeller, j0.toString());
+        JSONObject mitmBuyGood = cBuyer.sendJson("buyGood good11 "+ cSeller._name);
+        isSigned(mitmBuyGood, cBuyer.getPublicKeyPath());
 
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("NO", jsonObj.getString("Action"));
+        String a = mitmBuyGood.getString("Message");
+        JSONObject mitm = new JSONObject(a);
+        mitm.put("wtf", "yeah");
+        mitmBuyGood.put("Message", mitm.toString());
+        checkAnswer(cBuyer.buyGood(mitmBuyGood), "NO");
     }
 
     @Test
     public void testReplayAttackBuyGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-        int portBuyer = 3999+1;
-        int portSeller = 3999+2;
-
         HdsClient cBuyer = ClientServiceTest.getClient("client1");//new HdsClient(buyer, portBuyer);
         HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
 
         // Seller sells the item
-        sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        JSONObject ITSRequest = cSeller.sendJson("intentionToSell good20");
+        isSigned(ITSRequest, "assymetricKeys/user2.pub");
+
+        JSONObject answerITS = cSeller.intentionToSell(ITSRequest);
+        checkAnswer(answerITS, "YES");
+
+        // Buyer buys the item
         JSONObject replayAttackJson = cBuyer.sendJson("buyGood good20 "+ cSeller._name);
-        String serverAnswer = sendTo("localhost", portSeller, replayAttackJson.toString());
+        isSigned(replayAttackJson, "assymetricKeys/user1.pub");
 
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("YES", jsonObj.getString("Action"));
+        JSONObject answerBuyGood = cBuyer.buyGood(replayAttackJson);
+        checkAnswer(answerBuyGood, "YES");
 
-        // Buyer sells the item back to the seller
-        sendTo(cBuyer,"localhost", serverPort, cBuyer.sendJson("intentionToSell good20").toString());
-        JSONObject j0 = cSeller.sendJson("buyGood good20 "+ cBuyer._name);
-        serverAnswer = sendTo("localhost", portBuyer, j0.toString());
+        // Buyer puts the item for sale
+        JSONObject ITSRequest2 = cBuyer.sendJson("intentionToSell good20");
+        isSigned(ITSRequest2, "assymetricKeys/user1.pub");
 
-        // checks if the transaction is validated
-        JSONObject _jsonObj = new JSONObject(serverAnswer);
-        _jsonObj = new JSONObject(_jsonObj.getString("Message"));
-        Assert.assertEquals("YES", _jsonObj.getString("Action"));
+        JSONObject answerITS2 = cBuyer.intentionToSell(ITSRequest2);
+        checkAnswer(answerITS2, "YES");
 
-        TimeUnit.SECONDS.sleep(1);
-        // Recovering the item
-        serverAnswer = sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("YES", jsonObj.getString("Action"));
+        // Seller buys back the item
+        JSONObject buyGoodRequest = cSeller.sendJson("buyGood good20 "+ cBuyer._name);
+        isSigned(buyGoodRequest, "assymetricKeys/user2.pub");
 
-        serverAnswer = sendTo("localhost", portSeller, replayAttackJson.toString());
+        JSONObject answerBuyGood2 = cSeller.buyGood(buyGoodRequest);
+        checkAnswer(answerBuyGood2, "YES");
 
-        // checks if the replay attack was denied
-        _jsonObj = new JSONObject(serverAnswer);
-        _jsonObj = new JSONObject(_jsonObj.getString("Message"));
-        Assert.assertEquals("NO", _jsonObj.getString("Action"));
-
-
+        // Buyer tries to replay an old request
+        JSONObject answerBuyGoodReplay = cBuyer.buyGood(replayAttackJson);
+        checkAnswer(answerBuyGoodReplay, "NO");
     }
 
     @Test
     public void testManInTheMiddleAttackGetStateOfGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-
         HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
-        JSONObject jsonObj = cSeller.sendJson("getStateOfGood good7");
-        JSONObject j0 = new JSONObject(jsonObj.getString("Message"));
-        j0.put("Good","good21");
-        jsonObj.put("Message", j0.toString());
-        //System.out.println(j0.toString());
-        String serverAnswer = sendTo(cSeller,"localhost", serverPort, jsonObj.toString());
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertTrue("The server answer didn't send a refusing action after MITM",jsonObj.has("Action"));
-        Assert.assertEquals("Message got changed in the middle of the connection, the server isn't validating the requests.","NO", jsonObj.getString("Action"));
+
+        JSONObject GSOGRequest = cSeller.sendJson("getStateOfGood good7");
+        isSigned(GSOGRequest, "assymetricKeys/user1.pub");
+        JSONObject answerGSOG = cSeller.getStateOfGood(GSOGRequest);
+        checkGood(answerGSOG, "user1","good7", "false");
+        GSOGRequest.put("Message", cSeller.sendJson("getStateOfGood good1").getString("Message"));
+        JSONObject MITMAttack = cSeller.getStateOfGood(GSOGRequest);
+        checkAnswer(MITMAttack, "NO");
     }
 
     @Test
     public void testReplayAttackGetStateOfGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
-
         HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
-        JSONObject replayAttackJson = cSeller.sendJson("getStateOfGood good7");
-        //System.out.println(j0.toString());
-        String serverAnswer = sendTo(cSeller,"localhost", serverPort, replayAttackJson.toString());
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        System.out.println(jsonObj.toString() + "------------");
-        Assert.assertFalse(jsonObj.has("Action"));
 
-        // Applying the replay attack
-        serverAnswer = sendTo(cSeller,"localhost", serverPort, replayAttackJson.toString());
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertTrue("The server answer didn't send a refusing action after replay attack", jsonObj.has("Action"));
-        Assert.assertEquals("NO", jsonObj.getString("Action"));
-
+        JSONObject GSOGRequest = cSeller.sendJson("getStateOfGood good7");
+        isSigned(GSOGRequest, "assymetricKeys/user1.pub");
+        JSONObject answerGSOG = cSeller.getStateOfGood(GSOGRequest);
+        checkGood(answerGSOG, "user1","good7", "false");
+        JSONObject replayAttack = cSeller.getStateOfGood(GSOGRequest);
+        checkAnswer(replayAttack, "NO");
     }
 
     @Test
@@ -172,14 +141,11 @@ public class SecurityTestCase extends BaseTest {
         HdsClient cBuyer = ClientServiceTest.getClient("client1");//new HdsClient(buyer, portBuyer);
         HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
 
-        sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
-        sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good11").toString());
+        checkAnswer(cSeller.intentionToSell(cSeller.sendJson("intentionToSell good20")),"YES");
+        checkAnswer(cSeller.intentionToSell(cSeller.sendJson("intentionToSell good11")),"YES");
+
         JSONObject j0 = cBuyer.sendJson("buyGood good20 "+ cSeller._name);
-
         JSONObject mitmJson =cSeller.sendJson("transferGood good20 "+ cBuyer._name, j0);
-
-
-        //System.out.println(a + " -----------");
 
         //doing the man in the middle
         JSONObject manInTheMiddleJson = new JSONObject(mitmJson.getString("Message"));
@@ -187,79 +153,58 @@ public class SecurityTestCase extends BaseTest {
         mitmJson.put("Message", manInTheMiddleJson.toString());
 
         // checking the servers answer
-        String serverAnswer = sendTo(cSeller,"localhost", serverPort, mitmJson.toString());
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("NO", jsonObj.getString("Action"));
+        JSONObject serverAnswer = cSeller.transferGood(mitmJson);
+        checkAnswer(serverAnswer, "NO");
     }
 
     @Test
     public void testReplayAttackTransferGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
 
-        HdsClient cBuyer = ClientServiceTest.getClient("client1");//new HdsClient(buyer, portBuyer);
-        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
+        HdsClient cBuyer = ClientServiceTest.getClient("client1");
+        HdsClient cSeller = ClientServiceTest.getClient("client2");
+        checkAnswer(cSeller.intentionToSell(cSeller.sendJson("intentionToSell good20")), "YES");
 
-        sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
         JSONObject j0 = cBuyer.sendJson("buyGood good20 "+ cSeller._name);
-
         JSONObject replayJson =cSeller.sendJson("transferGood good20 "+ cBuyer._name, j0);
 
-        // checking the servers answer
-        String serverAnswer = sendTo(cSeller,"localhost", serverPort, replayJson.toString());
-        JSONObject jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("YES", jsonObj.getString("Action"));
+        // Checking the servers answer
+        checkAnswer(cSeller.transferGood(replayJson), "YES");
 
-        sendTo(cBuyer,"localhost", serverPort, cBuyer.sendJson("intentionToSell good20").toString());
+        // Buyer puts the item for sale
+        checkAnswer(cBuyer.intentionToSell(cBuyer.sendJson("intentionToSell good20")),"YES");
 
         // Buying item back
         j0 = cSeller.sendJson("buyGood good20 "+ cBuyer._name);
-
         JSONObject newJson =cBuyer.sendJson("transferGood good20 "+ cSeller._name, j0);
+        checkAnswer(cSeller.transferGood(newJson), "YES");
 
-        // checking the servers answer
-        serverAnswer = sendTo(cBuyer,"localhost", serverPort, newJson.toString());
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        Assert.assertEquals("YES", jsonObj.getString("Action"));
-
-
-        TimeUnit.SECONDS.sleep(3);
-        sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
+        // Seller sets item to sell again
+        checkAnswer(cSeller.intentionToSell(cSeller.sendJson("intentionToSell good20")), "YES");
 
         // replay attack
-        serverAnswer = sendTo(cSeller,"localhost", serverPort, replayJson.toString());
-
-        jsonObj = new JSONObject(serverAnswer);
-        jsonObj = new JSONObject(jsonObj.getString("Message"));
-        //System.out.println();
-        Assert.assertEquals("NO", jsonObj.getString("Action"));
-
+        checkAnswer(cSeller.transferGood(replayJson), "NO");
     }
     
     @Test(expected=ManInTheMiddleException.class)
     public void testServerResponseManInTheMiddle() throws HdsClientException {
         assumeTrue("Server is not Up",serverIsUp());
-        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
-        String serverAnswer = sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
-        JSONObject j = new JSONObject(serverAnswer);
-        JSONObject message = new JSONObject(j.getString("Message"));
+        HdsClient cSeller = ClientServiceTest.getClient("client2");
+        JSONObject serverAnswer = cSeller.intentionToSell(cSeller.sendJson("intentionToSell good20"));
+        JSONObject message = new JSONObject(serverAnswer.getString("Message"));
 	    message.put("Good", "w");
-	    j.put("Message", message.toString());
+        serverAnswer.put("Message", message.toString());
 
-	    cSeller.validateServerRequest(j);
-        //Assert.assertFalse("Client is not detecting man in the middle",cSeller.validateServerRequest(j));
+	    cSeller.validateServerRequest(serverAnswer);
     }
 
     @Test(expected = ReplayAttackException.class)
     public void testServerReplayAttack() throws HdsClientException {
         assumeTrue("Server is not Up",serverIsUp());
-        HdsClient cSeller = ClientServiceTest.getClient("client2");//new HdsClient(seller, portSeller);
-        String serverAnswer = sendTo(cSeller,"localhost", serverPort, cSeller.sendJson("intentionToSell good20").toString());
-
-        Assert.assertTrue("Something is wrong the server is not signing well", cSeller.validateServerRequest(new JSONObject(serverAnswer)));
-        cSeller.validateServerRequest(new JSONObject(serverAnswer));
+        HdsClient cSeller = ClientServiceTest.getClient("client2");
+        JSONObject serverAnswer = cSeller.intentionToSell(cSeller.sendJson("intentionToSell good20"));
+        Assert.assertTrue("Something is wrong the server is not signing well", cSeller.validateServerRequest(serverAnswer));
+        cSeller.validateServerRequest(serverAnswer);
     }
 
 }

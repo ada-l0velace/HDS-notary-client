@@ -20,6 +20,9 @@ public class HdsClient implements ILibrary {
     public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
     public String _name;
     public int _port;
+    public int NREPLICAS = Main.replicas;
+    public int _baseServerPort = 19999;
+    public int _serverPort = 19999;
     public Map<String,Integer> _myMap = new HashMap<String,Integer>();
     public String serverPublicKey;
     public JSONArray requests = new JSONArray();
@@ -41,12 +44,16 @@ public class HdsClient implements ILibrary {
         DatabaseManager.getInstance().createDatabase();
     }
 
+    public String getPublicKeyPath() {
+        return "assymetricKeys/"+ _name+".pub";
+    }
+
     public boolean validateServerRequest(JSONObject serverAnswer) throws HdsClientException {
         String hash = Utils.getSHA256(serverAnswer.getString("Message"));
         Boolean signature = Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), serverPublicKey);
         Boolean notReplayed = DatabaseManager.getInstance().verifyReplay(hash);
         Boolean b = signature && notReplayed;
-
+        System.out.println(signature);
         if (b) {
             DatabaseManager.getInstance().addToRequests(Utils.getSHA256(serverAnswer.getString("Message")));
             return true;
@@ -92,7 +99,7 @@ public class HdsClient implements ILibrary {
         String hash = challenge.getString("SHA512");
         String X;
         System.out.println(serverAnswer.toString());
-        requests.put(serverAnswer);
+        //requests.put(serverAnswer);
         //requests += serverAnswer.toString() + "\n";
         for (char a:alphanum) {
             for (char b:alphanum) {
@@ -110,7 +117,7 @@ public class HdsClient implements ILibrary {
                             JSONObject jo = buildFinalMessage(m, new JSONObject());
                             String toSend = jo.toString();
                             System.out.println(toSend);
-                            requests.put(jo);
+                            //requests.put(jo);
                             dos.writeUTF(toSend);
 
                             return dis.readUTF();
@@ -143,7 +150,7 @@ public class HdsClient implements ILibrary {
                     //System.out.println(tosend);
 
                     JSONObject jo = this.sendJson(tosend);
-                    requests.put(jo);
+                    //requests.put(jo);
                     sendJson(jo);
 
                     if(jo.toString().contains("Wrong Syntax")) {
@@ -180,6 +187,8 @@ public class HdsClient implements ILibrary {
 
     public String connectToClient(String host, int port, JSONObject jo) {
         String answer = "";
+        int maxRetries = 10;
+        int retries = 0;
         while (true) {
             try {
 
@@ -199,14 +208,14 @@ public class HdsClient implements ILibrary {
 
                 try {
                     String received;
-                    if (port == 19999) {
+                    if (port >= _serverPort) {
                         System.out.println("Client " + s + " sends " + jo.toString());
                         dos.writeUTF(jo.toString());
                         //System.out.println(_port);
                         String receivedChallenge = dis.readUTF();
                         JSONObject challenge = new JSONObject(receivedChallenge);
                         received = solveChallenge(challenge, dis, dos);
-                        requests.put(new JSONObject(received));
+                        //requests.put(new JSONObject(received));
                     } else {
                         System.out.println("Client " + s + " sends " + jo.toString());
                         dos.writeUTF(jo.toString());
@@ -240,7 +249,11 @@ public class HdsClient implements ILibrary {
                 // closing resources
 
             } catch (IOException e) {
-                logger.error(e.getMessage() + " " + port);
+                logger.error(e.getMessage() + " on port:" + port);
+                e.printStackTrace();
+                retries++;
+                if (retries == maxRetries)
+                    break;
                 continue;
                 //e.printStackTrace();
             }
@@ -270,7 +283,7 @@ public class HdsClient implements ILibrary {
             jo.put(s, _name);
         }
         else {
-            if (s == "Seller")
+            if (s.equals("Seller"))
                 jo.put("Action", "Wrong Syntax: intentionToSell <goodId>");
             else
                 jo.put("Action", "Wrong Syntax: getStateOfGood <goodId>");
@@ -396,7 +409,7 @@ public class HdsClient implements ILibrary {
 
     @Override
     public JSONObject getStateOfGood(JSONObject request) throws HdsClientException {
-        String answerS = connectToClient("localhost", 19999, request);
+        String answerS = connectToClient("localhost", _serverPort, request);
         return checkSignature(answerS);
     }
 
@@ -404,12 +417,17 @@ public class HdsClient implements ILibrary {
     public JSONObject buyGood(JSONObject request) throws HdsClientException {
         String tosend = new JSONObject(request.getString("Message")).getString("Seller");
         int clientPort = _myMap.get(tosend);
-        String answerS = connectToClient("localhost", clientPort, request);
+
+        String answerS="";
+        //for (int i=0;i< NREPLICAS;i++) {
+        answerS = connectToClient("localhost", clientPort, request);
+        //}
+
         JSONObject serverJson = new JSONObject(answerS);
 
         if(validateServerRequest(serverJson)) {
             System.out.println(answerS);
-            requests.put(serverJson);
+            //requests.put(serverJson);
             return serverJson;
         }
         else {
@@ -419,13 +437,19 @@ public class HdsClient implements ILibrary {
 
     @Override
     public JSONObject intentionToSell(JSONObject request) throws HdsClientException  {
-        String answerS = connectToClient("localhost", 19999, request);
+        String answerS ="";
+        for (int i=0;i< NREPLICAS;i++)
+            answerS = connectToClient("localhost", _serverPort+i, request);
+        //String answerS = connectToClient("localhost", _serverPort, request);
         return checkSignature(answerS);
     }
 
     @Override
     public JSONObject transferGood(JSONObject request) throws HdsClientException {
-        String answerS = connectToClient("localhost", 19999, request);
-        return checkSignature(answerS);
+        String answerS ="";
+        for (int i=0;i< NREPLICAS;i++)
+            answerS = connectToClient("localhost", _serverPort+i, request);
+        return new JSONObject(answerS);
+        //return checkSignature(answerS);
     }
 }

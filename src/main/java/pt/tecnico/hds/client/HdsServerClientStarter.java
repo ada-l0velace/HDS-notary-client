@@ -32,7 +32,8 @@ public class HdsServerClientStarter implements Runnable {
                     thread.start();
                 }
             } catch (Exception e) {
-
+                _client.logger.error(e.getMessage());
+                System.exit(-1);
                 //System.out.println(e.getMessage());
             }
         }
