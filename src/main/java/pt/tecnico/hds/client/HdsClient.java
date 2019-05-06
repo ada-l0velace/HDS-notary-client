@@ -428,11 +428,21 @@ public class HdsClient implements ILibrary {
     @Override
     public JSONObject getStateOfGood(JSONObject request) throws HdsClientException {
         String answerS = "";
+        _register._readList = new ArrayList<RegisterValue>();
+
         for (int i=0;i< NREPLICAS;i++) {
             answerS = connectToClient("localhost", _serverPort+i, request);
-            checkSignature(answerS);
+            if (answerS != null) {
+                checkSignature(answerS);
+                _register._readList.add(new RegisterValue(new JSONObject(answerS)));
+            }
+
         }
-        return new JSONObject(answerS);
+        if (_register._readList.size() > (NREPLICAS + Main.f)/2) {
+            return _register.getHighestValueReadList();
+        }
+
+        return null;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package pt.tecnico.hds.client;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +25,18 @@ public class HdsRegister {
             _v = v;
 
         //send ACK to client
+    }
+
+    public JSONObject getHighestValueReadList() {
+        long max = Integer.MIN_VALUE;
+        JSONObject maxO = null;
+        for(int i=0; i<_readList.size(); i++){
+            if(_readList.get(i).getTimestamp() > max){
+                max = _readList.get(i).getTimestamp();
+                maxO = _readList.get(i).getValue();
+            }
+        }
+        return maxO;
     }
 
 
