@@ -16,6 +16,7 @@ import pt.tecnico.hds.client.exception.HdsClientException;
 import pt.tecnico.hds.client.exception.ManInTheMiddleException;
 import pt.tecnico.hds.client.exception.ReplayAttackException;
 import pt.tecnico.hds.plibrary.RequestDto;
+import pt.tecnico.hds.plibrary.RequestReadDto;
 
 public class HdsClient implements ILibrary {
     public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
@@ -434,14 +435,19 @@ public class HdsClient implements ILibrary {
     @Override
     public JSONObject getStateOfGood(JSONObject request) throws HdsClientException {
         String answerS = "";
+        _register._rid++;
         _register._readList = new ArrayList<RegisterValue>();
 
         for (int i=0;i< NREPLICAS;i++) {
             answerS = connectToClient("localhost", _serverPort+i, request);
 
             if (answerS != null) {
-                checkSignature(answerS);
-                _register._readList.add(new RegisterValue(new JSONObject(answerS)));
+                JSONObject a = new JSONObject(answerS);
+                JSONObject b = new JSONObject();
+                b.put("value", answerS);
+                RequestDto dto = new RequestReadDto(b.toString(), _register._rid,i);
+                checkSignature(dto.getOldValue());
+                _register._readList.add(new RegisterValue(new JSONObject(dto.getOldValue())));
             }
 
         }
