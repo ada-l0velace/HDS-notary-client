@@ -49,6 +49,11 @@
 
     </build>
     <dependencies>
+        <dependency>
+            <groupId>pt.tecnico.hds.plibrary</groupId>
+            <artifactId>HDS-public-library</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <dependency>
             <groupId>org.json</groupId>

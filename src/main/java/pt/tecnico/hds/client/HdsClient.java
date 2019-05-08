@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import pt.tecnico.hds.client.exception.HdsClientException;
 import pt.tecnico.hds.client.exception.ManInTheMiddleException;
 import pt.tecnico.hds.client.exception.ReplayAttackException;
+import pt.tecnico.hds.plibrary.RequestDto;
 
 public class HdsClient implements ILibrary {
     public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
@@ -187,7 +188,7 @@ public class HdsClient implements ILibrary {
     }
 
     public String connectToClient(String host, int port, JSONObject jo) {
-        String answer = "";
+        String answer = null;
         int maxRetries = 10;
         int retries = 0;
         while (true) {
@@ -251,7 +252,7 @@ public class HdsClient implements ILibrary {
 
             } catch (IOException e) {
                 logger.error(e.getMessage() + " on port:" + port);
-                e.printStackTrace();
+                //e.printStackTrace();
                 retries++;
                 if (retries == maxRetries)
                     break;
@@ -391,16 +392,21 @@ public class HdsClient implements ILibrary {
     }
     public JSONObject write(JSONObject request) throws HdsClientException {
         String answerS ="";
-
+        String auxS;
+        _register._wts += 1;
         for (int i=0;i< NREPLICAS;i++) {
-            answerS = connectToClient("localhost", _serverPort + i, request);
-            if (answerS != null) {
+            auxS = connectToClient("localhost", _serverPort + i, request);
+            if (auxS != null) {
+                RequestDto signedDto = _register.sign(this, i, new JSONObject(auxS));
+                answerS = signedDto.getOldValue();
                 checkSignature(answerS);
                 _register._acks.add(new RegisterValue(new JSONObject(answerS)));
+
             }
         }
 
         if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
+            //JSONObject answer = _register._acks.get(0).getValue();
             _register._acks = new ArrayList<RegisterValue>();
             return new JSONObject(answerS);
         }
@@ -432,6 +438,7 @@ public class HdsClient implements ILibrary {
 
         for (int i=0;i< NREPLICAS;i++) {
             answerS = connectToClient("localhost", _serverPort+i, request);
+
             if (answerS != null) {
                 checkSignature(answerS);
                 _register._readList.add(new RegisterValue(new JSONObject(answerS)));
@@ -475,20 +482,26 @@ public class HdsClient implements ILibrary {
     @Override
     public JSONObject transferGood(JSONObject request) throws HdsClientException {
         String answerS ="";
-
+        String auxS;
+        _register._wts += 1;
         for (int i=0;i< NREPLICAS;i++) {
-            answerS = connectToClient("localhost", _serverPort + i, request);
-            if (answerS != null) {
+            auxS = connectToClient("localhost", _serverPort + i, request);
+            if (auxS != null) {
+                RequestDto signedDto = _register.sign(this, i, new JSONObject(auxS));
+                answerS = signedDto.getOldValue();
                 _register._acks.add(new RegisterValue(new JSONObject(answerS)));
+
             }
         }
 
         if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
+            //JSONObject answer = _register._acks.get(0).getValue();
             _register._acks = new ArrayList<RegisterValue>();
             return new JSONObject(answerS);
         }
 
         return null;
+
         //return checkSignature(answerS);
     }
 }

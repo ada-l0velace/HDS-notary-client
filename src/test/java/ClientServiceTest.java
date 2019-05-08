@@ -216,7 +216,7 @@ public class ClientServiceTest extends BaseTest {
     }
 
     @Test
-    public void testBuyGoodOwnGoodFailure(@Mocked final Scanner scn) throws Exception {
+    public void testBuyGoodOwnGoodFailure() throws Exception {
         //new ClientCmdExpectations(Arrays.asList("intentionToSell good3", "buyGood good3 user9", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
         HdsClient cBuyer = ClientServiceTest.getClient("client9");//new HdsClient(buyer, portBuyer);
