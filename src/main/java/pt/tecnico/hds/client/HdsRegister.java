@@ -18,8 +18,8 @@ public class HdsRegister {
 
 
     public HdsRegister(){
-        _readList = new ArrayList<RegisterValue>();
-        _acks = new ArrayList<RegisterValue>();
+        _readList = new ArrayList<>();
+        _acks = new ArrayList<>();
         _rid = 0;
         _wts = 0;
         //v = new RegisterValue();
