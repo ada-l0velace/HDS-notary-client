@@ -105,4 +105,34 @@ public class FaultToleranceTest extends BaseTest {
         }
     }
 
+    @Test
+    public void oneFaultBuyGoodFails() throws Exception {
+        assumeTrue("Server is not Up", serverIsUp());
+        HdsClient c0 = ClientServiceTest.getClient("client4");
+        HdsClient c1 = ClientServiceTest.getClient("client5");
+        HdsClient t = spy(c0);
+        when(t.connectToClient(anyString(), anyInt(), any())).thenAnswer(
+                new Answer() {
+                    int i = 0;
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        if (i++ == 1)
+                            return null;
+                        return invocation.callRealMethod();
+                    }
+                });
+
+        JSONObject intentionToSellRequest = c1.sendJson("intentionToSell good1");
+        JSONObject answerITS = c1.intentionToSell(intentionToSellRequest);
+        checkAnswer(answerITS, "YES");
+
+        JSONObject buyGoodRequest = t.sendJson("buyGood good1 user5");
+        JSONObject answerBGR = t.buyGood(buyGoodRequest);
+        checkAnswer(answerBGR, "YES");
+
+        JSONObject getStateOfGoodRequest = t.sendJson("getStateOfGood good1");
+        JSONObject answerGSOGR = t.getStateOfGood(getStateOfGoodRequest);
+        checkGood(answerGSOGR, t._name, "good1", "false");
+
+    }
+
 }

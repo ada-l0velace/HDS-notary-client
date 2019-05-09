@@ -43,7 +43,7 @@ public class RegisterValue {
 
     @Override
     public String toString() {
-        return _timestamp+" "+_pid+ " " + _value.toString()+ " " +_message.getString("Message");
+        return _timestamp+_message.getString("Message");
     }
 
 }
