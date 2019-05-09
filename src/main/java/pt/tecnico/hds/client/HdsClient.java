@@ -17,6 +17,7 @@ import pt.tecnico.hds.client.exception.ManInTheMiddleException;
 import pt.tecnico.hds.client.exception.ReplayAttackException;
 import pt.tecnico.hds.plibrary.RequestDto;
 import pt.tecnico.hds.plibrary.RequestReadDto;
+import pt.tecnico.hds.plibrary.RequestWriteDto;
 
 public class HdsClient implements ILibrary {
     public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
@@ -286,10 +287,7 @@ public class HdsClient implements ILibrary {
             jo.put(s, _name);
         }
         else {
-            if (s.equals("Seller"))
-                jo.put("Action", "Wrong Syntax: intentionToSell <goodId>");
-            else
-                jo.put("Action", "Wrong Syntax: getStateOfGood <goodId>");
+            jo.put("Action","Wrong Syntax: "+ error);
         }
         return jo;
     }
@@ -309,9 +307,41 @@ public class HdsClient implements ILibrary {
         return jo;
     }
 
+    private JSONObject buildMessageGetStateOfGoodRead(JSONObject _message, int pid, JSONObject finalMessage) {
+        JSONObject jCommand = buildMessageIntentionToSell("getStateOfGood "+_message.getString("Good"));
+        jCommand.put("pid", pid);
+        jCommand.put("rid", _register._rid);
+        String message = jCommand.toString();
+        finalMessage.put("Value", message);
+        return finalMessage;
+    }
+
+    private JSONObject buildMessageTransferGoodWrite(JSONObject _message, int pid, JSONObject finalMessage) {
+        JSONObject jCommand = buildMessageTransferGood("transferGood "+_message.getString("Good") + " "+_message.getString("Buyer"));
+        jCommand.put("pid", pid);
+        jCommand.put("wts", _register._wts);
+        String message = jCommand.toString();
+        return buildFinalByzantineMessage(message, finalMessage);
+    }
+
+    private JSONObject buildMessageIntentionToSellWrite(JSONObject _message, int pid, JSONObject finalMessage) {
+        JSONObject jCommand = buildMessageIntentionToSell("intentionToSell "+_message.getString("Good"));
+        jCommand.put("pid", pid);
+        jCommand.put("wts", _register._wts);
+        String message = jCommand.toString();
+        return buildFinalByzantineMessage(message, finalMessage);
+    }
+
+    public JSONObject buildFinalByzantineMessage(String message, JSONObject finalMessage) {
+        finalMessage.put("Value", message);
+        finalMessage.put("ValueSignature", Utils.signWithPrivateKey(message, "assymetricKeys/"+_name));
+        return finalMessage;
+    }
+
     private JSONObject buildMessageIntentionToSell(String command) {
         return actionGoodSeller(command, "Seller", "intentionToSell <goodId>");
     }
+
 
     private JSONObject buildMessageGetStateOfGood(String command) {
         return actionGoodSeller(command, "Buyer", "getStateOfGood <goodId>");
@@ -337,6 +367,7 @@ public class HdsClient implements ILibrary {
     }
 
     public JSONObject buildFinalMessage(String message, JSONObject finalMessage) {
+
         finalMessage.put("Message", message);
         finalMessage.put("Hash", Utils.signWithPrivateKey(message, "assymetricKeys/"+_name));
         return finalMessage;
@@ -395,12 +426,16 @@ public class HdsClient implements ILibrary {
         String answerS ="";
         String auxS;
         _register._wts += 1;
+
         for (int i=0;i< NREPLICAS;i++) {
-            auxS = connectToClient("localhost", _serverPort + i, request);
+
+            auxS = connectToClient("localhost",
+                    _serverPort + i,
+                    buildMessageIntentionToSellWrite(new JSONObject(request.getString("Message")),
+                    i, request));
             if (auxS != null) {
-                RequestDto signedDto = _register.sign(this, i, new JSONObject(auxS));
-                answerS = signedDto.getOldValue();
-                checkSignature(answerS);
+                //RequestDto signedDto = _register.sign(this, i, new JSONObject(auxS));
+                answerS = auxS;//signedDto.getOldValue();
                 _register._acks.add(new RegisterValue(new JSONObject(answerS)));
 
             }
@@ -409,6 +444,8 @@ public class HdsClient implements ILibrary {
         if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
             //JSONObject answer = _register._acks.get(0).getValue();
             _register._acks = new ArrayList<RegisterValue>();
+
+            checkSignature(answerS);
             return new JSONObject(answerS);
         }
 
@@ -439,15 +476,13 @@ public class HdsClient implements ILibrary {
         _register._readList = new ArrayList<RegisterValue>();
 
         for (int i=0;i< NREPLICAS;i++) {
-            answerS = connectToClient("localhost", _serverPort+i, request);
+            answerS = connectToClient("localhost", _serverPort+i,
+                    buildMessageGetStateOfGoodRead(new JSONObject(request.getString("Message")),
+                    i, request));
 
-            if (answerS != null) {
-                JSONObject a = new JSONObject(answerS);
-                JSONObject b = new JSONObject();
-                b.put("value", answerS);
-                RequestDto dto = new RequestReadDto(b.toString(), _register._rid,i);
-                checkSignature(dto.getOldValue());
-                _register._readList.add(new RegisterValue(new JSONObject(dto.getOldValue())));
+            if (answerS != null /*&& _register.verifySignature()*/) {
+                checkSignature(answerS);
+                _register._readList.add(new RegisterValue(new JSONObject(answerS)));
             }
 
         }
@@ -491,10 +526,12 @@ public class HdsClient implements ILibrary {
         String auxS;
         _register._wts += 1;
         for (int i=0;i< NREPLICAS;i++) {
-            auxS = connectToClient("localhost", _serverPort + i, request);
+
+            auxS = connectToClient("localhost", _serverPort + i,
+                    buildMessageTransferGoodWrite(new JSONObject(request.getString("Message")),
+                    i, request));
             if (auxS != null) {
-                RequestDto signedDto = _register.sign(this, i, new JSONObject(auxS));
-                answerS = signedDto.getOldValue();
+                answerS = auxS;
                 _register._acks.add(new RegisterValue(new JSONObject(answerS)));
 
             }

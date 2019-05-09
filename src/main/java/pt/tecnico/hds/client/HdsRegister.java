@@ -1,6 +1,7 @@
 package pt.tecnico.hds.client;
 
 import org.json.JSONObject;
+import org.json.JSONString;
 import pt.tecnico.hds.plibrary.RequestDto;
 import pt.tecnico.hds.plibrary.RequestWriteDto;
 import sun.misc.Request;
@@ -25,15 +26,16 @@ public class HdsRegister {
         //v = new RegisterValue();
     }
 
-    public JSONObject verifySignature(RequestDto dto, HdsClient h){
-        if (Utils.verifySignWithPubKeyFile(dto.getValueToSign(), dto.getSignature(),"assymetricKeys/"+h._name+".pub")) {
-            return new JSONObject(new JSONObject(dto.getValueToSign()).getString("value"));
+    public Boolean verifySignature(JSONObject request, HdsClient h){
+        
+        if (Utils.verifySignWithPubKeyFile(request.getString("Value"), request.getString("ValueSignature"),"assymetricKeys/"+h._name+".pub")) {
+            return false;
         }
-        return null;
+        return true;
     }
 
     public RequestDto sign(HdsClient h, int pid, JSONObject value) {
-        _wts += 1;
+        //_wts += 1;
         JSONObject b = new JSONObject();
         b.put("pId", pid);
         b.put("wts",_wts);
