@@ -156,12 +156,12 @@ public class ClientServiceTest extends BaseTest {
 
         isSigned(intentionToSellRequest, "assymetricKeys/user1.pub");
         isSigned(getStateOfGoodRequest, "assymetricKeys/user3.pub");
-
         JSONObject answerITS = hSeller.intentionToSell(intentionToSellRequest);
         isSigned(answerITS, hSeller.serverPublicKey);
         checkAnswer(answerITS, "NO");
 
         JSONObject answerGSOG = hBuyer.getStateOfGood(getStateOfGoodRequest);
+        Assert.assertNotNull(answerGSOG);
         isSigned(answerGSOG, hSeller.serverPublicKey);
         checkGood(answerGSOG, "user5", "good1", "false");
 

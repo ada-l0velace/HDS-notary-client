@@ -1,6 +1,7 @@
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
@@ -75,7 +76,7 @@ public class BinzantineTest extends BaseTest {
     }
 
     @Test
-    public void oneBinzantineFailureFails() throws Exception {
+    public void oneByzantineFailureFails() throws Exception {
         assumeTrue("Server is not Up", serverIsUp());
         HdsClient c = ClientServiceTest.getClient("client5");
         HdsClient t = spy(c);
@@ -83,7 +84,7 @@ public class BinzantineTest extends BaseTest {
                 new Answer() {
                     int i = 0;
                     public Object answer(InvocationOnMock invocation) throws Throwable {
-                        if (i++ == t.NREPLICAS-1)
+                        if (i++ == 0)
                             return null;
                         return invocation.callRealMethod();
                     }
@@ -93,7 +94,15 @@ public class BinzantineTest extends BaseTest {
         checkAnswer(answerITS, "YES");
         JSONObject getStateOfGoodRequest = t.sendJson("getStateOfGood good1");
         JSONObject answerGSOGR = t.getStateOfGood(getStateOfGoodRequest);
-        checkGood(answerGSOGR, t._name, "good1", "YES");
+        checkGood(answerGSOGR, t._name, "good1", "true");
+        InOrder inOrder = inOrder(t);
+        for (int i = 0; i < t.NREPLICAS; i++) {
+            inOrder.verify(t).connectToClient("localhost", t._baseServerPort+i, intentionToSellRequest);
+        }
+
+        for (int i = 0; i < t.NREPLICAS; i++) {
+            inOrder.verify(t).connectToClient("localhost", t._baseServerPort+i, getStateOfGoodRequest);
+        }
     }
 
 }

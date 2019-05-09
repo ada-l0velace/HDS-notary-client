@@ -320,6 +320,7 @@ public class HdsClient implements ILibrary {
         JSONObject jCommand = buildMessageTransferGood("transferGood "+_message.getString("Good") + " "+_message.getString("Buyer"));
         jCommand.put("pid", pid);
         jCommand.put("wts", _register._wts);
+        jCommand.put("signer", _name);
         String message = jCommand.toString();
         return buildFinalByzantineMessage(message, finalMessage);
     }
@@ -328,6 +329,7 @@ public class HdsClient implements ILibrary {
         JSONObject jCommand = buildMessageIntentionToSell("intentionToSell "+_message.getString("Good"));
         jCommand.put("pid", pid);
         jCommand.put("wts", _register._wts);
+        jCommand.put("signer", _name);
         String message = jCommand.toString();
         return buildFinalByzantineMessage(message, finalMessage);
     }
@@ -434,15 +436,12 @@ public class HdsClient implements ILibrary {
                     buildMessageIntentionToSellWrite(new JSONObject(request.getString("Message")),
                     i, request));
             if (auxS != null) {
-                //RequestDto signedDto = _register.sign(this, i, new JSONObject(auxS));
-                answerS = auxS;//signedDto.getOldValue();
+                answerS = auxS;
                 _register._acks.add(new RegisterValue(new JSONObject(answerS)));
-
             }
         }
 
         if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
-            //JSONObject answer = _register._acks.get(0).getValue();
             _register._acks = new ArrayList<RegisterValue>();
 
             checkSignature(answerS);
@@ -472,21 +471,29 @@ public class HdsClient implements ILibrary {
     @Override
     public JSONObject getStateOfGood(JSONObject request) throws HdsClientException {
         String answerS = "";
+        String auxS;
         _register._rid++;
         _register._readList = new ArrayList<RegisterValue>();
 
         for (int i=0;i< NREPLICAS;i++) {
-            answerS = connectToClient("localhost", _serverPort+i,
+            auxS = connectToClient("localhost", _serverPort+i,
                     buildMessageGetStateOfGoodRead(new JSONObject(request.getString("Message")),
                     i, request));
 
-            if (answerS != null /*&& _register.verifySignature()*/) {
+            if (auxS != null /*&& _register.verifySignature()*/) {
+                answerS = auxS;
                 checkSignature(answerS);
-                _register._readList.add(new RegisterValue(new JSONObject(answerS)));
+                RegisterValue r = new RegisterValue(new JSONObject(answerS));
+                if (r.verifySignature())
+                    _register._readList.add(r);
             }
 
         }
         if (_register._readList.size() > (NREPLICAS + Main.f)/2) {
+
+            System.out.println("----------------------------");
+            System.out.println(_register._readList.toString());
+            System.out.println("----------------------------");
             return _register.getHighestValueReadList();
         }
 
