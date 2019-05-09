@@ -12,9 +12,9 @@ import static org.mockito.Mockito.*;
 import static org.junit.Assume.assumeTrue;
 
 @RunWith(MockitoJUnitRunner.class)
-public class BinzantineTest extends BaseTest {
+public class FaultToleranceTest extends BaseTest {
 
-    public BinzantineTest () {
+    public FaultToleranceTest() {
         super();
     }
 
@@ -76,7 +76,7 @@ public class BinzantineTest extends BaseTest {
     }
 
     @Test
-    public void oneByzantineFailureFails() throws Exception {
+    public void oneFaultGetStateOfGoodAfterwardsFails() throws Exception {
         assumeTrue("Server is not Up", serverIsUp());
         HdsClient c = ClientServiceTest.getClient("client5");
         HdsClient t = spy(c);
