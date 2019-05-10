@@ -1,17 +1,26 @@
+import mockit.Expectations;
+import mockit.Mock;
+import mockit.MockUp;
+import mockit.Mocked;
+import mockit.integration.junit4.JMockit;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import pt.tecnico.hds.client.HdsClient;
+import pt.tecnico.hds.client.HdsRegister;
 import pt.tecnico.hds.client.Utils;
 import pt.tecnico.hds.client.exception.HdsClientException;
 import pt.tecnico.hds.client.exception.ManInTheMiddleException;
 import pt.tecnico.hds.client.exception.ReplayAttackException;
 
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assume.assumeTrue;
 
-
+@RunWith(MockitoJUnitRunner.class)
 public class SecurityTestCase extends BaseTest {
 
     public SecurityTestCase () {
@@ -111,13 +120,13 @@ public class SecurityTestCase extends BaseTest {
     public void testManInTheMiddleAttackGetStateOfGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
         HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
-
         JSONObject GSOGRequest = cSeller.sendJson("getStateOfGood good7");
         isSigned(GSOGRequest, "assymetricKeys/user1.pub");
         JSONObject answerGSOG = cSeller.getStateOfGood(GSOGRequest);
         checkGood(answerGSOG, "user1","good7", "false");
         GSOGRequest.put("Message", cSeller.sendJson("getStateOfGood good1").getString("Message"));
         JSONObject MITMAttack = cSeller.getStateOfGood(GSOGRequest);
+        System.out.println(MITMAttack);
         checkAnswer(MITMAttack, "NO");
     }
 

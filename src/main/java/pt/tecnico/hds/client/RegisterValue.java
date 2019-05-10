@@ -17,18 +17,27 @@ public class RegisterValue {
             _value = new JSONObject(value.getString("Value"));
             _user = _value.getString("signer");
             _valueSignature = value.getString("SignatureValue");
-            _timestamp = _value.getLong("wts");
-            _pid = _value.getInt("pid");
+            _timestamp = _value.getLong("Timestamp");
+            //_pid = _value.getInt("pid");
         }
         _message = value;
     }
 
     public Boolean verifySignature() {
         if (_user != null && _value != null && _valueSignature != null)
-            return Utils.verifySignWithPubKeyFile(_value.toString(), _valueSignature, "assymetricKeys/"+_user+".pub");
+            return Utils.verifySignWithPubKeyFile(_value.toString(), _valueSignature, "assymetricKeys/"+getPublicKey(_user)+".pub");
         return false;
     }
 
+    public String getPublicKey(String user) {
+        if (user.equals("server")){
+            if (Main.debug)
+                return user+"Debug";
+            else
+                return user;
+        }
+        return _user;
+    }
     public JSONObject getValue(){
         return _value;
     }
@@ -43,7 +52,7 @@ public class RegisterValue {
 
     @Override
     public String toString() {
-        return _timestamp+_message.getString("Message");
+        return _timestamp+"";
     }
 
 }

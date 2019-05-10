@@ -60,10 +60,10 @@ public abstract class BaseTest {
 
     @After
     public void tearDown() throws Exception {
-        for (int i = 0; i < Main.replicas; i++) {
+        /*for (int i = 0; i < Main.replicas; i++) {
             databaseTester.get(i).setTearDownOperation(getTearDownOperation());
             databaseTester.get(i).onTearDown();
-        }
+        }*/
     }
 
     protected DatabaseOperation getSetUpOperation() throws Exception {

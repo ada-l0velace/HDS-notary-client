@@ -11,7 +11,16 @@ import java.util.List;
 
 public class HdsRegister {
 
+    public long getRid() {
+        return _rid;
+    }
+
     long _rid;
+
+    public long getWts() {
+        return _wts;
+    }
+
     long _wts;
     List<RegisterValue> _acks;
     List<RegisterValue> _readList;
@@ -28,6 +37,7 @@ public class HdsRegister {
     public JSONObject getHighestValueReadList() {
         long max = Integer.MIN_VALUE;
         JSONObject maxO = null;
+
         for(int i=0; i<_readList.size(); i++){
             if(_readList.get(i).getTimestamp() > max){
                 max = _readList.get(i).getTimestamp();

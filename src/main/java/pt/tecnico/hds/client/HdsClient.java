@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+import org.json.JSONString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pt.tecnico.hds.client.exception.HdsClientException;
@@ -307,31 +308,31 @@ public class HdsClient implements ILibrary {
         return jo;
     }
 
-    private JSONObject buildMessageGetStateOfGoodRead(JSONObject _message, int pid, JSONObject finalMessage) {
-        JSONObject jCommand = buildMessageIntentionToSell("getStateOfGood "+_message.getString("Good"));
-        jCommand.put("pid", pid);
-        jCommand.put("rid", _register._rid);
-        String message = jCommand.toString();
-        finalMessage.put("Value", message);
-        return finalMessage;
+    private JSONObject buildMessageGetStateOfGoodRead(JSONObject _message, int pid) {
+        //JSONObject jCommand = buildMessageIntentionToSell("getStateOfGood "+_message.getString("Good"));
+        _message.put("pid", pid);
+        _message.put("rid", _register.getRid());
+        String message = _message.toString();
+        //finalMessage.put("Value", message);
+        return buildFinalMessage(message, new JSONObject());
     }
 
-    private JSONObject buildMessageTransferGoodWrite(JSONObject _message, int pid, JSONObject finalMessage) {
-        JSONObject jCommand = buildMessageTransferGood("transferGood "+_message.getString("Good") + " "+_message.getString("Buyer"));
-        jCommand.put("pid", pid);
-        jCommand.put("wts", _register._wts);
-        jCommand.put("signer", _name);
-        String message = jCommand.toString();
-        return buildFinalByzantineMessage(message, finalMessage);
+    private JSONObject buildMessageTransferGoodWrite(JSONObject request, int pid) {
+        JSONObject _message = new JSONObject(request.getString("Message"));
+        _message.put("pid", pid);
+        _message.put("Timestamp", _register.getWts());
+        _message.put("signer", _name);
+        String message = _message.toString();
+        return buildFinalMessage(message, request);//buildFinalByzantineMessage(message, finalMessage);
     }
 
-    private JSONObject buildMessageIntentionToSellWrite(JSONObject _message, int pid, JSONObject finalMessage) {
-        JSONObject jCommand = buildMessageIntentionToSell("intentionToSell "+_message.getString("Good"));
-        jCommand.put("pid", pid);
-        jCommand.put("wts", _register._wts);
-        jCommand.put("signer", _name);
-        String message = jCommand.toString();
-        return buildFinalByzantineMessage(message, finalMessage);
+    private JSONObject buildMessageIntentionToSellWrite(JSONObject _message, int pid) {
+        //JSONObject jCommand = buildMessageIntentionToSell("intentionToSell "+_message.getString("Good"));
+        _message.put("pid", pid);
+        _message.put("Timestamp", _register.getWts());
+        _message.put("signer", _name);
+        String message = _message.toString();
+        return  buildFinalMessage(message, new JSONObject()); /*buildFinalByzantineMessage(message, finalMessage);*/
     }
 
     public JSONObject buildFinalByzantineMessage(String message, JSONObject finalMessage) {
@@ -376,28 +377,33 @@ public class HdsClient implements ILibrary {
     }
 
     public JSONObject sendJson(String command) {
+        //_register._wts = new java.util.Date().getTime();
         JSONObject finalMessage = new JSONObject();
         if (command.startsWith("transferGood")) {
             JSONObject jCommand = buildMessageTransferGood(command);
             jCommand.put("Timestamp", new java.util.Date().getTime());
+            jCommand.put("signer", _name);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("intentionToSell")) {
             JSONObject jCommand = buildMessageIntentionToSell(command);
             jCommand.put("Timestamp", new java.util.Date().getTime());
+            jCommand.put("signer", _name);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("getStateOfGood")) {
             JSONObject jCommand = buildMessageGetStateOfGood(command);
             jCommand.put("Timestamp", new java.util.Date().getTime());
+            jCommand.put("signer", _name);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("buyGood")) {
             JSONObject jCommand = buildMessageBuyGood(command);
             jCommand.put("Timestamp", new java.util.Date().getTime());
+            jCommand.put("signer", _name);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
@@ -405,7 +411,7 @@ public class HdsClient implements ILibrary {
         JSONObject jo = new JSONObject();
         jo.put("Action", "Invalid command");
         jo.put("Timestamp", new java.util.Date().getTime());
-
+        jo.put("signer", _name);
         return buildFinalMessage(jo.toString(), finalMessage);
     }
 
@@ -427,14 +433,14 @@ public class HdsClient implements ILibrary {
     public JSONObject write(JSONObject request) throws HdsClientException {
         String answerS ="";
         String auxS;
-        _register._wts += 1;
+
 
         for (int i=0;i< NREPLICAS;i++) {
-
             auxS = connectToClient("localhost",
                     _serverPort + i,
-                    buildMessageIntentionToSellWrite(new JSONObject(request.getString("Message")),
-                    i, request));
+                    request);
+                    //buildMessageIntentionToSellWrite(new JSONObject(request.getString("Message")),
+                    //i));
             if (auxS != null) {
                 answerS = auxS;
                 _register._acks.add(new RegisterValue(new JSONObject(answerS)));
@@ -476,10 +482,12 @@ public class HdsClient implements ILibrary {
         _register._readList = new ArrayList<RegisterValue>();
 
         for (int i=0;i< NREPLICAS;i++) {
-            auxS = connectToClient("localhost", _serverPort+i,
-                    buildMessageGetStateOfGoodRead(new JSONObject(request.getString("Message")),
-                    i, request));
-
+            //JSONObject wtf = buildMessageGetStateOfGoodRead(new JSONObject(request.getString("Message")),
+            //        i);
+            auxS = connectToClient("localhost", _serverPort+i, request);
+            //System.out.println("---------------");
+            //System.out.println(wtf.toString());
+            //System.out.println("---------------");
             if (auxS != null /*&& _register.verifySignature()*/) {
                 answerS = auxS;
                 checkSignature(answerS);
@@ -531,12 +539,11 @@ public class HdsClient implements ILibrary {
     public JSONObject transferGood(JSONObject request) throws HdsClientException {
         String answerS ="";
         String auxS;
-        _register._wts += 1;
+        _register._wts = new java.util.Date().getTime();
         for (int i=0;i< NREPLICAS;i++) {
-
             auxS = connectToClient("localhost", _serverPort + i,
-                    buildMessageTransferGoodWrite(new JSONObject(request.getString("Message")),
-                    i, request));
+                    request);//buildMessageTransferGoodWrite(request,
+                    //i));
             if (auxS != null) {
                 answerS = auxS;
                 _register._acks.add(new RegisterValue(new JSONObject(answerS)));
@@ -545,7 +552,6 @@ public class HdsClient implements ILibrary {
         }
 
         if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
-            //JSONObject answer = _register._acks.get(0).getValue();
             _register._acks = new ArrayList<RegisterValue>();
             return new JSONObject(answerS);
         }

@@ -52,4 +52,5 @@
   <notary userId="user3" goodsId="good19" onSale="0"/>
   <notary userId="user2" goodsId="good20" onSale="0"/>
   <notary userId="user1" goodsId="good21" onSale="0"/>
+  <requests />
 </dataset>
