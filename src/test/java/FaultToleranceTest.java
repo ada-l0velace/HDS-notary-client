@@ -11,7 +11,7 @@ import static org.mockito.Mockito.*;
 
 import static org.junit.Assume.assumeTrue;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class FaultToleranceTest extends BaseTest {
 
     public FaultToleranceTest() {

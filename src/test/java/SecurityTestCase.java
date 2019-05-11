@@ -126,7 +126,6 @@ public class SecurityTestCase extends BaseTest {
         checkGood(answerGSOG, "user1","good7", "false");
         GSOGRequest.put("Message", cSeller.sendJson("getStateOfGood good1").getString("Message"));
         JSONObject MITMAttack = cSeller.getStateOfGood(GSOGRequest);
-        System.out.println(MITMAttack);
         checkAnswer(MITMAttack, "NO");
     }
 

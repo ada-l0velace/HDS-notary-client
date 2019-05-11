@@ -10,15 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-import org.json.JSONString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pt.tecnico.hds.client.exception.HdsClientException;
 import pt.tecnico.hds.client.exception.ManInTheMiddleException;
 import pt.tecnico.hds.client.exception.ReplayAttackException;
-import pt.tecnico.hds.plibrary.RequestDto;
-import pt.tecnico.hds.plibrary.RequestReadDto;
-import pt.tecnico.hds.plibrary.RequestWriteDto;
 
 public class HdsClient implements ILibrary {
     public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
@@ -31,7 +27,7 @@ public class HdsClient implements ILibrary {
     public String serverPublicKey;
     public JSONArray requests = new JSONArray();
     public Thread serverThread;
-    HdsRegister _register = new HdsRegister();
+    ByzantineRegister _register = new ByzantineRegularRegister(this);
 
     public HdsClient(String name, int port) {
         _name = name;
@@ -89,7 +85,7 @@ public class HdsClient implements ILibrary {
         serverThread = thread;
     }
     public void shutDown() {
-        /*System.exit(0);*/
+        System.exit(0);
     }
 
     public String solveChallenge(JSONObject serverAnswer, DataInputStream dis, DataOutputStream dos) throws IOException, HdsClientException {
@@ -183,7 +179,7 @@ public class HdsClient implements ILibrary {
                 }
             }
 
-        }catch(Exception e){
+        } catch(Exception e){
             logger.error(e.getMessage());
             //e.printStackTrace();
         }
@@ -279,6 +275,7 @@ public class HdsClient implements ILibrary {
         }
         return true;
     }
+    
     private JSONObject actionGoodSeller(String command, String s, String error) {
         String [] cmds = command.split(" ");
         JSONObject jo = new JSONObject();
@@ -430,32 +427,6 @@ public class HdsClient implements ILibrary {
         }
         return null;
     }
-    public JSONObject write(JSONObject request) throws HdsClientException {
-        String answerS ="";
-        String auxS;
-
-
-        for (int i=0;i< NREPLICAS;i++) {
-            auxS = connectToClient("localhost",
-                    _serverPort + i,
-                    request);
-                    //buildMessageIntentionToSellWrite(new JSONObject(request.getString("Message")),
-                    //i));
-            if (auxS != null) {
-                answerS = auxS;
-                _register._acks.add(new RegisterValue(new JSONObject(answerS)));
-            }
-        }
-
-        if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
-            _register._acks = new ArrayList<RegisterValue>();
-
-            checkSignature(answerS);
-            return new JSONObject(answerS);
-        }
-
-        return null;
-    }
 
     public JSONObject sendJson(String command, JSONObject secondMessage) {
         JSONObject j0 = sendJson(command);
@@ -476,36 +447,7 @@ public class HdsClient implements ILibrary {
 
     @Override
     public JSONObject getStateOfGood(JSONObject request) throws HdsClientException {
-        String answerS = "";
-        String auxS;
-        _register._rid++;
-        _register._readList = new ArrayList<RegisterValue>();
-
-        for (int i=0;i< NREPLICAS;i++) {
-            //JSONObject wtf = buildMessageGetStateOfGoodRead(new JSONObject(request.getString("Message")),
-            //        i);
-            auxS = connectToClient("localhost", _serverPort+i, request);
-            //System.out.println("---------------");
-            //System.out.println(wtf.toString());
-            //System.out.println("---------------");
-            if (auxS != null /*&& _register.verifySignature()*/) {
-                answerS = auxS;
-                checkSignature(answerS);
-                RegisterValue r = new RegisterValue(new JSONObject(answerS));
-                if (r.verifySignature())
-                    _register._readList.add(r);
-            }
-
-        }
-        if (_register._readList.size() > (NREPLICAS + Main.f)/2) {
-
-            System.out.println("----------------------------");
-            System.out.println(_register._readList.toString());
-            System.out.println("----------------------------");
-            return _register.getHighestValueReadList();
-        }
-
-        return null;
+        return _register.read(request);
     }
 
     @Override
@@ -514,15 +456,12 @@ public class HdsClient implements ILibrary {
         int clientPort = _myMap.get(tosend);
 
         String answerS="";
-        //for (int i=0;i< NREPLICAS;i++) {
         answerS = connectToClient("localhost", clientPort, request);
-        //}
 
         JSONObject serverJson = new JSONObject(answerS);
 
         if(validateServerRequest(serverJson)) {
             System.out.println(answerS);
-            //requests.put(serverJson);
             return serverJson;
         }
         else {
@@ -532,32 +471,11 @@ public class HdsClient implements ILibrary {
 
     @Override
     public JSONObject intentionToSell(JSONObject request) throws HdsClientException  {
-        return write(request);
+        return _register.write(request, true);
     }
 
     @Override
     public JSONObject transferGood(JSONObject request) throws HdsClientException {
-        String answerS ="";
-        String auxS;
-        _register._wts = new java.util.Date().getTime();
-        for (int i=0;i< NREPLICAS;i++) {
-            auxS = connectToClient("localhost", _serverPort + i,
-                    request);//buildMessageTransferGoodWrite(request,
-                    //i));
-            if (auxS != null) {
-                answerS = auxS;
-                _register._acks.add(new RegisterValue(new JSONObject(answerS)));
-
-            }
-        }
-
-        if (_register._acks.size() > (NREPLICAS + Main.f)/2) {
-            _register._acks = new ArrayList<RegisterValue>();
-            return new JSONObject(answerS);
-        }
-
-        return null;
-
-        //return checkSignature(answerS);
+        return _register.write(request, false);
     }
 }
