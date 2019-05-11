@@ -17,12 +17,12 @@ public abstract class ByzantineRegister {
         return _wts;
     }
     long _wts;
+
     List<RegisterValue> _acks;
-    List<RegisterValue> _readList;
+
 
     public ByzantineRegister(HdsClient _client) {
         client = _client;
-        _readList = new ArrayList<>();
         _acks = new ArrayList<>();
         _rid = 0;
         _wts = 0;

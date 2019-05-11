@@ -20,6 +20,9 @@ public class RegisterValue {
             _timestamp = _value.getLong("Timestamp");
             //_pid = _value.getInt("pid");
         }
+        else if(new JSONObject(value.getString("Message")).has("wts")) {
+            _timestamp = new JSONObject(value.getString("Message")).getLong("wts");
+        }
         _message = value;
     }
 

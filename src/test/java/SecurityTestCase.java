@@ -1,22 +1,12 @@
-import mockit.Expectations;
-import mockit.Mock;
-import mockit.MockUp;
-import mockit.Mocked;
-import mockit.integration.junit4.JMockit;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import pt.tecnico.hds.client.HdsClient;
-import pt.tecnico.hds.client.HdsRegister;
-import pt.tecnico.hds.client.Utils;
 import pt.tecnico.hds.client.exception.HdsClientException;
 import pt.tecnico.hds.client.exception.ManInTheMiddleException;
 import pt.tecnico.hds.client.exception.ReplayAttackException;
-
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assume.assumeTrue;
 
@@ -39,10 +29,11 @@ public class SecurityTestCase extends BaseTest {
         assumeTrue("Server is not Up",serverIsUp());
         HdsClient cSeller = ClientServiceTest.getClient("client1");//new HdsClient("user1", 3999+1);
         JSONObject requestIST = cSeller.sendJson("intentionToSell good7");
-        JSONObject mitmIST = cSeller.sendJson("intentionToSell good7");
+        JSONObject mitmIST = new JSONObject(requestIST.getString("Message"));
+        mitmIST.put("FUCK", "YOU");
         isSigned(requestIST, cSeller.getPublicKeyPath());
-        mitmIST.put("Message", requestIST.getString("Message"));
-        checkAnswer(cSeller.intentionToSell(mitmIST), "NO");
+        requestIST.put("Message", mitmIST.toString());
+        checkAnswer(cSeller.intentionToSell(requestIST), "NO");
     }
 
     @Test
@@ -184,7 +175,9 @@ public class SecurityTestCase extends BaseTest {
 
         // Buying item back
         j0 = cSeller.sendJson("buyGood good20 "+ cBuyer._name);
+        //System.out.println(j0.toString());
         JSONObject newJson =cBuyer.sendJson("transferGood good20 "+ cSeller._name, j0);
+
         checkAnswer(cSeller.transferGood(newJson), "YES");
 
         // Seller sets item to sell again

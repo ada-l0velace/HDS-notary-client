@@ -222,14 +222,15 @@ public class ClientServiceTest extends BaseTest {
         HdsClient cBuyer = ClientServiceTest.getClient("client9");//new HdsClient(buyer, portBuyer);
 
         JSONObject intentionToSellRequest = cBuyer.sendJson("intentionToSell good3");
-        JSONObject buyRequest = cBuyer.sendJson("buyGood good3 user9");
-
         isSigned(intentionToSellRequest, "assymetricKeys/user9.pub");
-        isSigned(buyRequest, "assymetricKeys/user9.pub");
 
         JSONObject answerITSRequest = cBuyer.intentionToSell(intentionToSellRequest);
         isSigned(answerITSRequest, cBuyer.serverPublicKey);
         checkAnswer(answerITSRequest, "YES");
+
+        JSONObject buyRequest = cBuyer.sendJson("buyGood good3 user9");
+        isSigned(buyRequest, "assymetricKeys/user9.pub");
+
 
         JSONObject answerBuyGoodRequest = cBuyer.buyGood(buyRequest);
         isSigned(answerBuyGoodRequest, cBuyer.serverPublicKey);

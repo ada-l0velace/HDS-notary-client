@@ -2,12 +2,16 @@ package pt.tecnico.hds.client;
 
 import org.json.JSONObject;
 import pt.tecnico.hds.client.exception.HdsClientException;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class ByzantineRegularRegister extends ByzantineRegister {
+    List<RegisterValue> _readList;
 
     public ByzantineRegularRegister(HdsClient _client){
         super(_client);
+        _readList = new ArrayList<>();
     }
 
     public void checkSignature(boolean bool, String answerS) throws HdsClientException {
@@ -27,14 +31,21 @@ public class ByzantineRegularRegister extends ByzantineRegister {
 
             if (auxS != null) {
                 answerS = auxS;
-                client._register._acks.add(new RegisterValue(new JSONObject(answerS)));
+                RegisterValue r = new RegisterValue(new JSONObject(answerS));
+                System.out.println("---------------");
+                System.out.println(getWts());
+                System.out.println("---------------");
+                System.out.println(r.getTimestamp());
+                System.out.println("---------------");
+                System.out.println(answerS);
+                if(getWts() == r.getTimestamp())
+                    client._register._acks.add(r);
             }
         }
 
         if (client._register._acks.size() > (client.NREPLICAS + Main.f)/2) {
             client._register._acks.clear();
             checkSignature(doCheckSignature,answerS);
-            //client.checkSignature(answerS);
             return new JSONObject(answerS);
         }
         return null;
@@ -44,7 +55,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         String answerS = "";
         String auxS;
         client._register._rid++;
-        List<RegisterValue> readList = client._register._readList;
+        List<RegisterValue> readList = _readList;
         readList.clear();
 
         for (int i=0;i< client.NREPLICAS;i++) {
@@ -69,7 +80,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
     public JSONObject getHighestValueReadList() {
         long max = Integer.MIN_VALUE;
         JSONObject maxO = null;
-        List<RegisterValue> readList = client._register._readList;
+        List<RegisterValue> readList = _readList;
         for(int i=0; i< readList.size(); i++){
             if(readList.get(i).getTimestamp() > max){
                 max = readList.get(i).getTimestamp();
