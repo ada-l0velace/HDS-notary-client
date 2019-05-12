@@ -206,7 +206,6 @@ public class HdsClient implements ILibrary {
                 // the following loop performs the exchange of
                 // information between client and client handler
 
-
                 try {
                     String received;
                     if (port >= _serverPort) {
@@ -468,12 +467,9 @@ public class HdsClient implements ILibrary {
         answerS = connectToClient("localhost", clientPort, request);
 
         JSONObject serverJson = new JSONObject(answerS);
-        //System.out.println("WTFFFFFFFFFFFF");
+
         if(validateServerRequest(serverJson)) {
 
-            //System.out.println("---------------------");
-            //System.out.println(request.toString());
-            //System.out.println("---------------------");
             String good = new JSONObject(request.getString("Message")).getString("Good");
 
             JSONObject refreshGood = sendJson("getStateOfGood "+good);
@@ -502,4 +498,5 @@ public class HdsClient implements ILibrary {
     public JSONObject transferGood(JSONObject request) throws HdsClientException {
         return _register.write(request, false);
     }
+
 }

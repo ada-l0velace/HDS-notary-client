@@ -2,7 +2,6 @@ package pt.tecnico.hds.client;
 
 import org.json.JSONObject;
 import pt.tecnico.hds.client.exception.HdsClientException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,12 +31,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
             if (auxS != null) {
                 answerS = auxS;
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
-                /*System.out.println("---------------");
-                System.out.println(getWts());
-                System.out.println("---------------");
-                System.out.println(r.getTimestamp());
-                System.out.println("---------------");
-                System.out.println(answerS);*/
+
                 if(getWts() == r.getTimestamp())
                     client._register._acks.add(r);
             }
@@ -51,12 +45,9 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         return null;
     }
 
-    public JSONObject read(JSONObject request) throws HdsClientException {
+    public void sendToNReplicas(JSONObject request) throws HdsClientException {
         String answerS = "";
         String auxS;
-        //_rid++;
-        List<RegisterValue> readList = _readList;
-        readList.clear();
 
         for (int i=0;i< client.NREPLICAS;i++) {
             auxS = client.connectToClient("localhost", client._serverPort+i, request);
@@ -66,14 +57,18 @@ public class ByzantineRegularRegister extends ByzantineRegister {
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
 
                 if (r.verifySignature() && getRid() == r.getRid())
-                    readList.add(r);
+                    _readList.add(r);
             }
 
         }
-        if (readList.size() > (client.NREPLICAS + Main.f)/2) {
+    }
+
+    public JSONObject read(JSONObject request) throws HdsClientException {
+        _readList.clear();
+        sendToNReplicas(request);
+        if (_readList.size() > (client.NREPLICAS + Main.f)/2) {
             return getHighestValueReadList();
         }
-
         return null;
 
     }
