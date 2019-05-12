@@ -374,7 +374,7 @@ public class HdsClient implements ILibrary {
     }
 
     public JSONObject sendJson(String command) {
-        _register._wts = new java.util.Date().getTime();
+        _register._wts++;// = new java.util.Date().getTime();
         JSONObject finalMessage = new JSONObject();
         if (command.startsWith("transferGood")) {
             JSONObject jCommand = buildMessageTransferGood(command);
@@ -461,7 +461,24 @@ public class HdsClient implements ILibrary {
         JSONObject serverJson = new JSONObject(answerS);
 
         if(validateServerRequest(serverJson)) {
-            System.out.println(answerS);
+            //System.out.println("---------------------");
+            //System.out.println(request.toString());
+            //System.out.println("---------------------");
+            String good = new JSONObject(request.getString("Message")).getString("Good");
+
+            JSONObject refreshGood = sendJson("getStateOfGood "+good);
+
+
+            JSONObject goodRequest = getStateOfGood(refreshGood);
+            //System.out.println("###################");
+            //System.out.println(goodRequest.toString());
+            //System.out.println("###################");
+            if (goodRequest != null && goodRequest.has("Value")) {
+                long t = new JSONObject(goodRequest.getString("Value")).getLong("Timestamp");
+                if (_register._wts < t)
+                    _register._wts = t;
+                System.out.println(answerS);
+            }
             return serverJson;
         }
         else {

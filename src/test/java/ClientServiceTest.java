@@ -336,7 +336,7 @@ public class ClientServiceTest extends BaseTest {
     }
 
     @Test
-    public void testBuyGoodDoesNotExist(@Mocked final Scanner scn) throws Exception {
+    public void testBuyGoodDoesNotExist() throws Exception {
         //new ClientCmdExpectations(Arrays.asList("buyGood good50 user6", "Exit"), scn);
         assumeTrue("Server is not Up",serverIsUp());
 

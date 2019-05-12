@@ -155,7 +155,6 @@ public class SecurityTestCase extends BaseTest {
         JSONObject serverAnswer = cSeller.transferGood(mitmJson);
         checkAnswer(serverAnswer, "NO");
     }
-
     @Test
     public void testReplayAttackTransferGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
