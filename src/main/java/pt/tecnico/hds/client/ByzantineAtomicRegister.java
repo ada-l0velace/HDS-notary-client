@@ -21,7 +21,7 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
         String answerS;
         String auxS;
         JSONObject finalAnswer = null;
-        client._register._rid++;
+        _rid++;
         for (int i=0;i< client.NREPLICAS;i++) {
             auxS = client.connectToClient("localhost", client._serverPort+i, request);
             if(auxS != null) {

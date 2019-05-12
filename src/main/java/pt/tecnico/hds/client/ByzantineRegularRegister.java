@@ -54,7 +54,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
     public JSONObject read(JSONObject request) throws HdsClientException {
         String answerS = "";
         String auxS;
-        client._register._rid++;
+        //_rid++;
         List<RegisterValue> readList = _readList;
         readList.clear();
 
@@ -64,7 +64,8 @@ public class ByzantineRegularRegister extends ByzantineRegister {
                 answerS = auxS;
                 client.checkSignature(answerS);
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
-                if (r.verifySignature())
+
+                if (r.verifySignature() && getRid() == r.getRid())
                     readList.add(r);
             }
 

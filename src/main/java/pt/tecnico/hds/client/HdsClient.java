@@ -374,32 +374,40 @@ public class HdsClient implements ILibrary {
     }
 
     public JSONObject sendJson(String command) {
-        _register._wts++;// = new java.util.Date().getTime();
+
+
         JSONObject finalMessage = new JSONObject();
         if (command.startsWith("transferGood")) {
+            _register._wts++;
             JSONObject jCommand = buildMessageTransferGood(command);
-            jCommand.put("Timestamp",_register.getWts());
+            jCommand.put("Timestamp",new java.util.Date().getTime());
+            jCommand.put("wts", _register.getWts());
             jCommand.put("signer", _name);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("intentionToSell")) {
+            _register._wts++;
             JSONObject jCommand = buildMessageIntentionToSell(command);
-            jCommand.put("Timestamp", _register.getWts());
+            jCommand.put("Timestamp", new java.util.Date().getTime());
+            jCommand.put("wts", _register.getWts());
             jCommand.put("signer", _name);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("getStateOfGood")) {
+            _register._rid++;
             JSONObject jCommand = buildMessageGetStateOfGood(command);
-            jCommand.put("Timestamp", _register.getWts());
+            jCommand.put("Timestamp", new java.util.Date().getTime());
+            jCommand.put("rid", _register.getRid());
             jCommand.put("signer", _name);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
         else if (command.startsWith("buyGood")) {
             JSONObject jCommand = buildMessageBuyGood(command);
-            jCommand.put("Timestamp", _register.getWts());
+            jCommand.put("Timestamp", new java.util.Date().getTime());
+            jCommand.put("wts", _register.getWts());
             jCommand.put("signer", _name);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
@@ -407,7 +415,7 @@ public class HdsClient implements ILibrary {
 
         JSONObject jo = new JSONObject();
         jo.put("Action", "Invalid command");
-        jo.put("Timestamp", _register.getWts());
+        jo.put("Timestamp", new java.util.Date().getTime());
         jo.put("signer", _name);
         return buildFinalMessage(jo.toString(), finalMessage);
     }
@@ -452,6 +460,7 @@ public class HdsClient implements ILibrary {
 
     @Override
     public JSONObject buyGood(JSONObject request) throws HdsClientException {
+
         String tosend = new JSONObject(request.getString("Message")).getString("Seller");
         int clientPort = _myMap.get(tosend);
 
@@ -459,8 +468,9 @@ public class HdsClient implements ILibrary {
         answerS = connectToClient("localhost", clientPort, request);
 
         JSONObject serverJson = new JSONObject(answerS);
-
+        //System.out.println("WTFFFFFFFFFFFF");
         if(validateServerRequest(serverJson)) {
+
             //System.out.println("---------------------");
             //System.out.println(request.toString());
             //System.out.println("---------------------");
@@ -470,11 +480,8 @@ public class HdsClient implements ILibrary {
 
 
             JSONObject goodRequest = getStateOfGood(refreshGood);
-            //System.out.println("###################");
-            //System.out.println(goodRequest.toString());
-            //System.out.println("###################");
             if (goodRequest != null && goodRequest.has("Value")) {
-                long t = new JSONObject(goodRequest.getString("Value")).getLong("Timestamp");
+                long t = new JSONObject(goodRequest.getString("Value")).getLong("wts");
                 if (_register._wts < t)
                     _register._wts = t;
                 System.out.println(answerS);
