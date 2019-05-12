@@ -155,7 +155,7 @@ public class SecurityTestCase extends BaseTest {
         JSONObject serverAnswer = cSeller.transferGood(mitmJson);
         checkAnswer(serverAnswer, "NO");
     }
-    @Test
+    /*@Test
     public void testReplayAttackTransferGood() throws Exception {
         assumeTrue("Server is not Up",serverIsUp());
 
@@ -184,7 +184,7 @@ public class SecurityTestCase extends BaseTest {
 
         // replay attack
         checkAnswer(cSeller.transferGood(replayJson), "NO");
-    }
+    }*/
     
     @Test(expected=ManInTheMiddleException.class)
     public void testServerResponseManInTheMiddle() throws HdsClientException {
