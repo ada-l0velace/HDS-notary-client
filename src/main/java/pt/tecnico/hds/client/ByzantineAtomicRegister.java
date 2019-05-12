@@ -16,6 +16,7 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
         writeBack.put("Timestamp", new java.util.Date().getTime());
         writeBack.put("t", r.getTimestamp());
         writeBack.put("v",r.getValue());
+        writeBack.put("signer", client._name);
         return client.buildFinalMessage(writeBack.toString(), new JSONObject());
     }
 
