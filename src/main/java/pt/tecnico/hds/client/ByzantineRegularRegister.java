@@ -22,7 +22,20 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         String answerS ="";
         String auxS;
 
+        answerS = sendWrittingToReplicas(request);
 
+
+        if (client._register._acks.size() > (client.NREPLICAS + Main.f)/2) {
+            client._register._acks.clear();
+            checkSignature(doCheckSignature,answerS);
+            return new JSONObject(answerS);
+        }
+        return null;
+    }
+
+    public String sendWrittingToReplicas(JSONObject request) throws HdsClientException {
+        String answerS = "";
+        String auxS;
         for (int i=0;i< client.NREPLICAS;i++) {
             auxS = client.connectToClient("localhost",
                     client._serverPort + i,
@@ -36,16 +49,10 @@ public class ByzantineRegularRegister extends ByzantineRegister {
                     client._register._acks.add(r);
             }
         }
-
-        if (client._register._acks.size() > (client.NREPLICAS + Main.f)/2) {
-            client._register._acks.clear();
-            checkSignature(doCheckSignature,answerS);
-            return new JSONObject(answerS);
-        }
-        return null;
+        return answerS;
     }
 
-    public void sendToNReplicas(JSONObject request) throws HdsClientException {
+    public void sendReadingToReplicas(JSONObject request) throws HdsClientException {
         String answerS = "";
         String auxS;
 
@@ -63,9 +70,10 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         }
     }
 
+
     public JSONObject read(JSONObject request) throws HdsClientException {
         _readList.clear();
-        sendToNReplicas(request);
+        sendReadingToReplicas(request);
         if (_readList.size() > (client.NREPLICAS + Main.f)/2) {
             return getHighestValueReadList();
         }

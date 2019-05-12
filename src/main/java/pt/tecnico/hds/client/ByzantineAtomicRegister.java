@@ -5,6 +5,8 @@ import pt.tecnico.hds.client.exception.HdsClientException;
 
 public class ByzantineAtomicRegister extends ByzantineRegularRegister {
 
+    Boolean reading;
+
     public ByzantineAtomicRegister(HdsClient _client) {
         super(_client);
 
@@ -20,18 +22,38 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
         return client.buildFinalMessage(writeBack.toString(), new JSONObject());
     }
 
-    void executeWriteBack(JSONObject request) throws HdsClientException {
-        write(request, true);
+
+
+    JSONObject executeWriteBack(JSONObject request) throws HdsClientException {
+        return write(request, true);
+    }
+
+    @Override
+    public JSONObject write(JSONObject request, boolean doCheckSignature) throws HdsClientException {
+
+        String answerS = sendWrittingToReplicas(request);
+
+        if (_acks.size() > (client.NREPLICAS + Main.f)/2) {
+            if (reading) {
+                reading = false;
+            }
+            _acks.clear();
+            checkSignature(doCheckSignature, answerS);
+            return new JSONObject(answerS);
+        }
+        return null;
+
     }
 
     @Override
     public JSONObject read(JSONObject request) throws HdsClientException {
         _readList.clear();
-        sendToNReplicas(request);
+        reading = true;
+        sendReadingToReplicas(request);
+
         if (_readList.size() > (client.NREPLICAS + Main.f)/2) {
             RegisterValue highest = getHighestValueTsPair();
-            executeWriteBack(buildWriteBackRequest(highest));
-            return highest.getValue();
+            return executeWriteBack(buildWriteBackRequest(highest));
         }
         return null;
     }
