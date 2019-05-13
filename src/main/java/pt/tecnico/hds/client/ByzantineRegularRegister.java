@@ -51,6 +51,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
     public String sendWritingToReplicas(JSONObject request) {
         String answerS = "";
         AnswerThread responses[] = new AnswerThread[Main.replicas];
+
         sendMessages(responses, request);
 
         for (int i=0;i< client.NREPLICAS;i++) {
@@ -76,6 +77,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
             if (responses[i].auxS != null) {
                 answerS = responses[i].auxS;
                 client.checkSignature(answerS);
+
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
                 if(r.verifySignature() && getRid() == r.getRid())
                     _readList.add(r);

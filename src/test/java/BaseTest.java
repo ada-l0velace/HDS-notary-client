@@ -88,6 +88,12 @@ public abstract class BaseTest {
         }
     }
 
+    public String getServerKey(JSONObject request){
+        has_parameters(request, Arrays.asList("Message", "Hash"));
+        JSONObject message = new JSONObject(request.getString("Message"));
+        return "assymetricKeys/"+message.getString("signer")+".pub";
+    }
+
     public void has_parameters(JSONObject request, List<String> parameters) {
         for (String parameter:parameters) {
             Assert.assertTrue("Request doesn't include the parameter "+ parameter,request.has(parameter));

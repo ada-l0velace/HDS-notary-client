@@ -31,20 +31,12 @@ public class RegisterValue {
     }
 
     public Boolean verifySignature() {
+        //System.out.println(getPublicKey(_user, _value));
         if (_user != null && _value != null && _valueSignature != null)
-            return Utils.verifySignWithPubKeyFile(_value.toString(), _valueSignature, "assymetricKeys/"+getPublicKey(_user)+".pub");
+            return Utils.verifySignWithPubKeyFile(_value.toString(), _valueSignature, "assymetricKeys/"+_user+".pub");
         return false;
     }
 
-    public String getPublicKey(String user) {
-        if (user.equals("server")){
-            if (Main.debug)
-                return user+"Debug";
-            else
-                return user;
-        }
-        return _user;
-    }
     public JSONObject getValue(){
         return _value;
     }

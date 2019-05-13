@@ -14,9 +14,9 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
     }
 
     JSONObject buildWriteBackRequest(RegisterValue r) {
-        if (r.getTimestamp() > _wts) {
+        /*if (r.getTimestamp() > _wts) {
             _wts = r.getTimestamp();
-        }
+        }*/
 
         JSONObject writeBack = new JSONObject();
         writeBack.put("Action","WriteBack");
@@ -89,8 +89,8 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
 
         _readList.clear();
         reading = true;
-        sendReadingToReplicas(request);
 
+        sendReadingToReplicas(request);
 
         if (_readList.size() > (client.NREPLICAS + Main.f)/2) {
             RegisterValue highest = getHighestValueTsPair();

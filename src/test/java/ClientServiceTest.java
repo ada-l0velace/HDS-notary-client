@@ -136,12 +136,12 @@ public class ClientServiceTest extends BaseTest {
         isSigned(getStateOfGoodRequest, "assymetricKeys/user3.pub");
 
         JSONObject answerITS = hSeller.intentionToSell(intentionToSellRequest);
-        isSigned(answerITS, hSeller.serverPublicKey);
+        isSigned(answerITS, getServerKey(answerITS));
         checkAnswer(answerITS, "YES");
 
         JSONObject answerGSOG = hBuyer.getStateOfGood(getStateOfGoodRequest);
         System.out.println(answerGSOG.toString());
-        isSigned(answerGSOG, hSeller.serverPublicKey);
+        isSigned(answerGSOG, getServerKey(answerGSOG));
 
         checkGood(answerGSOG, "user1", "good7", "true");
     }
@@ -159,12 +159,15 @@ public class ClientServiceTest extends BaseTest {
         isSigned(intentionToSellRequest, "assymetricKeys/user1.pub");
         isSigned(getStateOfGoodRequest, "assymetricKeys/user3.pub");
         JSONObject answerITS = hSeller.intentionToSell(intentionToSellRequest);
-        isSigned(answerITS, hSeller.serverPublicKey);
+        System.out.println(answerITS);
+        isSigned(answerITS, getServerKey(answerITS));
+
         checkAnswer(answerITS, "NO");
 
         JSONObject answerGSOG = hBuyer.getStateOfGood(getStateOfGoodRequest);
+
         Assert.assertNotNull(answerGSOG);
-        isSigned(answerGSOG, hSeller.serverPublicKey);
+        isSigned(answerITS, getServerKey(answerITS));
         checkGood(answerGSOG, "user5", "good1", "false");
 
     }
@@ -185,11 +188,11 @@ public class ClientServiceTest extends BaseTest {
         isSigned(buyRequest, "assymetricKeys/user1.pub");
 
         JSONObject answerITSRequest = bOffSeller.intentionToSell(intentionToSellRequest);
-        isSigned(answerITSRequest, bSeller.serverPublicKey);
+        isSigned(answerITSRequest, getServerKey(answerITSRequest));
         checkAnswer(answerITSRequest, "YES");
 
         JSONObject answerBuyGoodRequest = bBuyer.buyGood(buyRequest);
-        isSigned(answerBuyGoodRequest, bBuyer.serverPublicKey);
+        isSigned(answerBuyGoodRequest, getServerKey(answerBuyGoodRequest));
         checkAnswer(answerBuyGoodRequest, "NO");
 
         /*bOffSeller.runCommands();
@@ -227,7 +230,7 @@ public class ClientServiceTest extends BaseTest {
         isSigned(intentionToSellRequest, "assymetricKeys/user9.pub");
 
         JSONObject answerITSRequest = cBuyer.intentionToSell(intentionToSellRequest);
-        isSigned(answerITSRequest, cBuyer.serverPublicKey);
+        isSigned(answerITSRequest, getServerKey(answerITSRequest));
         checkAnswer(answerITSRequest, "YES");
 
         JSONObject buyRequest = cBuyer.sendJson("buyGood good3 user9");
@@ -235,7 +238,7 @@ public class ClientServiceTest extends BaseTest {
 
 
         JSONObject answerBuyGoodRequest = cBuyer.buyGood(buyRequest);
-        isSigned(answerBuyGoodRequest, cBuyer.serverPublicKey);
+        isSigned(answerBuyGoodRequest, getServerKey(answerBuyGoodRequest));
         checkAnswer(answerBuyGoodRequest, "NO");
 
         /*cBuyer.runCommands();
@@ -272,18 +275,18 @@ public class ClientServiceTest extends BaseTest {
         isSigned(buyRequest, "assymetricKeys/user1.pub");
 
         JSONObject answerITSRequest = dSeller.intentionToSell(intentionToSellRequest);
-        isSigned(answerITSRequest, dSeller.serverPublicKey);
+        isSigned(answerITSRequest, getServerKey(answerITSRequest));
         checkAnswer(answerITSRequest, "YES");
 
         JSONObject answerBuyGoodRequest = dBuyer.buyGood(buyRequest);
-        isSigned(answerBuyGoodRequest, dSeller.serverPublicKey);
+        isSigned(answerBuyGoodRequest, getServerKey(answerBuyGoodRequest));
         checkAnswer(answerBuyGoodRequest, "YES");
 
         JSONObject gsRequest = dBuyer.sendJson("getStateOfGood good12");
         isSigned(gsRequest, "assymetricKeys/user1.pub");
 
         JSONObject answerGSRequest = dBuyer.getStateOfGood(gsRequest);
-        isSigned(answerGSRequest, dSeller.serverPublicKey);
+        isSigned(answerGSRequest, getServerKey(answerGSRequest));
         checkGood(answerGSRequest, "user1", "good12", "false");
 
 
@@ -319,7 +322,7 @@ public class ClientServiceTest extends BaseTest {
         JSONObject buyRequest = fBuyer.sendJson("buyGood good15 user7");
         JSONObject answerRequest = fBuyer.buyGood(buyRequest);
         isSigned(buyRequest, "assymetricKeys/user1.pub");
-        isSigned(answerRequest, fSeller.serverPublicKey);
+        isSigned(answerRequest, getServerKey(answerRequest));
         checkAnswer(answerRequest, "NO");
         //fBuyer.runCommands();
 
@@ -348,7 +351,7 @@ public class ClientServiceTest extends BaseTest {
         JSONObject buyRequest = gBuyer.sendJson("buyGood good50 user6");
         JSONObject answerRequest = gBuyer.buyGood(buyRequest);
         isSigned(buyRequest, "assymetricKeys/user1.pub");
-        isSigned(answerRequest, gSeller.serverPublicKey);
+        isSigned(answerRequest, getServerKey(answerRequest));
         checkAnswer(answerRequest, "NO");
 
         //gBuyer.runCommands();

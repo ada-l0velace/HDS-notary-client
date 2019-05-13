@@ -19,6 +19,7 @@ import pt.tecnico.hds.client.exception.ReplayAttackException;
 public class HdsClient implements ILibrary {
     public final static Logger logger = LoggerFactory.getLogger(HdsClient.class);
     public String _name;
+    public String _folder = "assymetricKeys/";
     public int _port;
     public int NREPLICAS = Main.replicas;
     public int _baseServerPort = 19999;
@@ -51,7 +52,8 @@ public class HdsClient implements ILibrary {
 
     public boolean validateServerRequest(JSONObject serverAnswer) throws HdsClientException {
         String hash = Utils.getSHA256(serverAnswer.getString("Message"));
-        Boolean signature = Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), serverPublicKey);
+        String serverSigner = new JSONObject(serverAnswer.getString("Message")).getString("signer");
+        Boolean signature = Utils.verifySignWithPubKeyFile(serverAnswer.getString("Message"), serverAnswer.getString("Hash"), _folder+serverSigner+".pub");
         Boolean notReplayed = DatabaseManager.getInstance().verifyReplay(hash);
         Boolean b = signature && notReplayed;
         //System.out.println(signature);
@@ -373,13 +375,14 @@ public class HdsClient implements ILibrary {
         return finalMessage;
     }
 
-    public JSONObject addictionalStuff(JSONObject jCommand) {
+    public JSONObject additionalStuff(JSONObject jCommand) {
         jCommand.put("Timestamp",new java.util.Date().getTime());
         jCommand.put("wts", _register.getWts());
         jCommand.put("rid", _register.getRid());
         jCommand.put("signer", _name);
         return jCommand;
     }
+
 
     public JSONObject sendJson(String command) {
 
@@ -389,7 +392,7 @@ public class HdsClient implements ILibrary {
             _register._wts++;
             _register._rid++;
             JSONObject jCommand = buildMessageTransferGood(command);
-            jCommand = addictionalStuff(jCommand);
+            jCommand = additionalStuff(jCommand);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
@@ -397,7 +400,7 @@ public class HdsClient implements ILibrary {
             _register._wts++;
             _register._rid++;
             JSONObject jCommand = buildMessageIntentionToSell(command);
-            jCommand = addictionalStuff(jCommand);
+            jCommand = additionalStuff(jCommand);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
@@ -412,7 +415,7 @@ public class HdsClient implements ILibrary {
         }
         else if (command.startsWith("buyGood")) {
             JSONObject jCommand = buildMessageBuyGood(command);
-            jCommand = addictionalStuff(jCommand);
+            jCommand = additionalStuff(jCommand);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
@@ -459,12 +462,13 @@ public class HdsClient implements ILibrary {
 
     @Override
     public JSONObject getStateOfGood(JSONObject request) throws HdsClientException {
+
         return _register.read(request);
     }
 
     @Override
     public JSONObject buyGood(JSONObject request) throws HdsClientException {
-
+        System.out.println("BUY SHIT");
         String tosend = new JSONObject(request.getString("Message")).getString("Seller");
         int clientPort = _myMap.get(tosend);
 
