@@ -22,7 +22,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         String answerS ="";
         String auxS;
 
-        answerS = sendWrittingToReplicas(request);
+        answerS = sendWritingToReplicas(request);
 
 
         if (client._register._acks.size() > (client.NREPLICAS + Main.f)/2) {
@@ -33,28 +33,30 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         return null;
     }
 
-    public String sendWrittingToReplicas(JSONObject request) throws HdsClientException {
-        String answerS = "";
-        String auxS;
-
-
-        System.out.println("-----------------------");
-        System.out.println(request.toString());
-        System.out.println("-----------------------");
+    public void sendMessages(AnswerThread responses[], JSONObject request){
         for (int i=0;i< client.NREPLICAS;i++) {
-            auxS = client.connectToClient("localhost",
-                    client._serverPort + i,
-                    request);
+            responses[i] = new AnswerThread(i, client, request);
+            responses[i].start();
 
-            if (auxS != null) {
-                answerS = auxS;
+        }
+        for (int i=0;i< client.NREPLICAS;i++) {
+            try {
+                responses[i].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public String sendWritingToReplicas(JSONObject request) {
+        String answerS = "";
+        AnswerThread responses[] = new AnswerThread[Main.replicas];
+        sendMessages(responses, request);
+
+        for (int i=0;i< client.NREPLICAS;i++) {
+            if (responses[i].auxS != null) {
+                answerS = responses[i].auxS;
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
-                /*
-                System.out.println("##################");
-                System.out.println(getWts());
-                System.out.println(r.getTimestamp());
-                System.out.println(r.getMessage());
-                System.out.println("###################");*/
                 if(getWts() == r.getTimestamp())
                     _acks.add(r);
             }

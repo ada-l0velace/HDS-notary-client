@@ -251,7 +251,7 @@ public class HdsClient implements ILibrary {
 
             } catch (IOException e) {
                 logger.error(e.getMessage() + " on port:" + port);
-                e.printStackTrace();
+                //e.printStackTrace();
                 retries++;
                 if (retries == maxRetries)
                     break;
@@ -373,6 +373,14 @@ public class HdsClient implements ILibrary {
         return finalMessage;
     }
 
+    public JSONObject addictionalStuff(JSONObject jCommand) {
+        jCommand.put("Timestamp",new java.util.Date().getTime());
+        jCommand.put("wts", _register.getWts());
+        jCommand.put("rid", _register.getRid());
+        jCommand.put("signer", _name);
+        return jCommand;
+    }
+
     public JSONObject sendJson(String command) {
 
 
@@ -381,9 +389,7 @@ public class HdsClient implements ILibrary {
             _register._wts++;
             _register._rid++;
             JSONObject jCommand = buildMessageTransferGood(command);
-            jCommand.put("Timestamp",new java.util.Date().getTime());
-            jCommand.put("wts", _register.getWts());
-            jCommand.put("signer", _name);
+            jCommand = addictionalStuff(jCommand);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
@@ -391,9 +397,7 @@ public class HdsClient implements ILibrary {
             _register._wts++;
             _register._rid++;
             JSONObject jCommand = buildMessageIntentionToSell(command);
-            jCommand.put("Timestamp", new java.util.Date().getTime());
-            jCommand.put("wts", _register.getWts());
-            jCommand.put("signer", _name);
+            jCommand = addictionalStuff(jCommand);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }
@@ -408,9 +412,7 @@ public class HdsClient implements ILibrary {
         }
         else if (command.startsWith("buyGood")) {
             JSONObject jCommand = buildMessageBuyGood(command);
-            jCommand.put("Timestamp", new java.util.Date().getTime());
-            jCommand.put("wts", _register.getWts());
-            jCommand.put("signer", _name);
+            jCommand = addictionalStuff(jCommand);
             String message = jCommand.toString();
             return buildFinalMessage(message, finalMessage);
         }

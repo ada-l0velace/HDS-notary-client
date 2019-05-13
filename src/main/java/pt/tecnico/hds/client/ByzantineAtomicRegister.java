@@ -36,32 +36,16 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
         return writeBack(request, true);
     }
 
-    public String sendWritingBackToReplicas(JSONObject request) throws HdsClientException {
+    public String sendWritingBackToReplicas(JSONObject request) {
         String answerS = "";
-        String auxS;
+        AnswerThread responses[] = new AnswerThread[Main.replicas];
 
+        sendMessages(responses, request);
 
-        System.out.println("-----------------------");
-        System.out.println(request.toString());
-        System.out.println("-----------------------");
         for (int i=0;i< client.NREPLICAS;i++) {
-            auxS = client.connectToClient("localhost",
-                    client._serverPort + i,
-                    request);
-
-            if (auxS != null) {
-                answerS = auxS;
+            if (responses[i].auxS != null) {
+                answerS = responses[i].auxS;
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
-
-                System.out.println("########WTS########");
-                System.out.println(getWts());
-                System.out.println(r.getTimestamp());
-                System.out.println(r.getMessage());
-                System.out.println("########RID########");
-                System.out.println(getRid());
-                System.out.println(r.getRid());
-                System.out.println(r.getMessage());
-                System.out.println("###################");
                 if (r.getRid() == getRid())
                     _acks.add(r);
             }
@@ -96,7 +80,7 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
         @Override
     public JSONObject write(JSONObject request, boolean doCheckSignature) throws HdsClientException {
         _acks.clear();
-        String answerS = sendWrittingToReplicas(request);
+        String answerS = sendWritingToReplicas(request);
         return deliver(answerS, doCheckSignature);
     }
 
