@@ -16,7 +16,7 @@ public class AnswerThread extends Thread {
         }
 
         public void run(){
-            auxS = client.connectToClient("localhost",
+            this.auxS = client.connectToClient("localhost",
                     client._serverPort + index,
                     request);
         }

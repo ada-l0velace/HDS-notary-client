@@ -64,23 +64,22 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         return answerS;
     }
 
+
+
+
     public void sendReadingToReplicas(JSONObject request) throws HdsClientException {
         String answerS = "";
-        String auxS;
+        AnswerThread responses[] = new AnswerThread[Main.replicas];
+        sendMessages(responses, request);
 
         for (int i=0;i< client.NREPLICAS;i++) {
-            auxS = client.connectToClient("localhost", client._serverPort+i, request);
-
-
-            if (auxS != null) {
-                answerS = auxS;
+            if (responses[i].auxS != null) {
+                answerS = responses[i].auxS;
                 client.checkSignature(answerS);
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
-
-                if (r.verifySignature() && getRid() == r.getRid())
+                if(r.verifySignature() && getRid() == r.getRid())
                     _readList.add(r);
             }
-
         }
     }
 
