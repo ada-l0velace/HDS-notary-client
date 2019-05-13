@@ -23,6 +23,8 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
         writeBack.put("Timestamp", new java.util.Date().getTime());
         writeBack.put("t", r.getTimestamp());
         writeBack.put("v",r.getValue());
+        writeBack.put("v",r.getValue());
+        writeBack.put("rid",r.getRid());
         writeBack.put("signer", client._name);
         highestValue = r;
         return client.buildFinalMessage(writeBack.toString(), new JSONObject());
@@ -34,7 +36,7 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
         return writeBack(request, true);
     }
 
-    public String sendWrittingBackToReplicas(JSONObject request) throws HdsClientException {
+    public String sendWritingBackToReplicas(JSONObject request) throws HdsClientException {
         String answerS = "";
         String auxS;
 
@@ -51,12 +53,17 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
                 answerS = auxS;
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
 
-                /*System.out.println("##################");
+                System.out.println("########WTS########");
                 System.out.println(getWts());
                 System.out.println(r.getTimestamp());
                 System.out.println(r.getMessage());
-                System.out.println("###################");*/
-                _acks.add(r);
+                System.out.println("########RID########");
+                System.out.println(getRid());
+                System.out.println(r.getRid());
+                System.out.println(r.getMessage());
+                System.out.println("###################");
+                if (r.getRid() == getRid())
+                    _acks.add(r);
             }
         }
         return answerS;
@@ -81,7 +88,7 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
 
     public JSONObject writeBack(JSONObject request, boolean doCheckSignature) throws HdsClientException {
         _acks.clear();
-        String answerS = sendWrittingBackToReplicas(request);
+        String answerS = sendWritingBackToReplicas(request);
         return deliver(answerS, doCheckSignature);
     }
 

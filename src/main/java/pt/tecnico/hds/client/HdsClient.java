@@ -379,6 +379,7 @@ public class HdsClient implements ILibrary {
         JSONObject finalMessage = new JSONObject();
         if (command.startsWith("transferGood")) {
             _register._wts++;
+            _register._rid++;
             JSONObject jCommand = buildMessageTransferGood(command);
             jCommand.put("Timestamp",new java.util.Date().getTime());
             jCommand.put("wts", _register.getWts());
@@ -388,6 +389,7 @@ public class HdsClient implements ILibrary {
         }
         else if (command.startsWith("intentionToSell")) {
             _register._wts++;
+            _register._rid++;
             JSONObject jCommand = buildMessageIntentionToSell(command);
             jCommand.put("Timestamp", new java.util.Date().getTime());
             jCommand.put("wts", _register.getWts());

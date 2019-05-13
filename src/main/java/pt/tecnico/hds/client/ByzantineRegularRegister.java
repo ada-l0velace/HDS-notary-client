@@ -49,12 +49,12 @@ public class ByzantineRegularRegister extends ByzantineRegister {
             if (auxS != null) {
                 answerS = auxS;
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
-
+                /*
                 System.out.println("##################");
                 System.out.println(getWts());
                 System.out.println(r.getTimestamp());
                 System.out.println(r.getMessage());
-                System.out.println("###################");
+                System.out.println("###################");*/
                 if(getWts() == r.getTimestamp())
                     _acks.add(r);
             }
