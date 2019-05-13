@@ -36,6 +36,11 @@ public class ByzantineRegularRegister extends ByzantineRegister {
     public String sendWrittingToReplicas(JSONObject request) throws HdsClientException {
         String answerS = "";
         String auxS;
+
+
+        System.out.println("-----------------------");
+        System.out.println(request.toString());
+        System.out.println("-----------------------");
         for (int i=0;i< client.NREPLICAS;i++) {
             auxS = client.connectToClient("localhost",
                     client._serverPort + i,
@@ -45,8 +50,13 @@ public class ByzantineRegularRegister extends ByzantineRegister {
                 answerS = auxS;
                 RegisterValue r = new RegisterValue(new JSONObject(answerS));
 
+                System.out.println("##################");
+                System.out.println(getWts());
+                System.out.println(r.getTimestamp());
+                System.out.println(r.getMessage());
+                System.out.println("###################");
                 if(getWts() == r.getTimestamp())
-                    client._register._acks.add(r);
+                    _acks.add(r);
             }
         }
         return answerS;
@@ -58,6 +68,8 @@ public class ByzantineRegularRegister extends ByzantineRegister {
 
         for (int i=0;i< client.NREPLICAS;i++) {
             auxS = client.connectToClient("localhost", client._serverPort+i, request);
+
+
             if (auxS != null) {
                 answerS = auxS;
                 client.checkSignature(answerS);

@@ -27,7 +27,7 @@ public class HdsClient implements ILibrary {
     public String serverPublicKey;
     public JSONArray requests = new JSONArray();
     public Thread serverThread;
-    ByzantineRegister _register = new ByzantineRegularRegister(this);
+    ByzantineRegister _register = new ByzantineAtomicRegister(this);
 
     public HdsClient(String name, int port) {
         _name = name;
@@ -230,16 +230,17 @@ public class HdsClient implements ILibrary {
                     dos.close();
 
                 } catch (java.net.SocketTimeoutException timeout) {
-                    timeout.printStackTrace();
+                    logger.error(timeout.getMessage() + " on port:" + port);
+                    //timeout.printStackTrace();
                     s.close();
                     break;
 
                 } catch (java.io.EOFException e0) {
-                    e0.printStackTrace();
+                    //e0.printStackTrace();
                     s.close();
                     break;
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                     s.close();
                     break;
                 }
@@ -250,7 +251,7 @@ public class HdsClient implements ILibrary {
 
             } catch (IOException e) {
                 logger.error(e.getMessage() + " on port:" + port);
-                //e.printStackTrace();
+                e.printStackTrace();
                 retries++;
                 if (retries == maxRetries)
                     break;
@@ -464,8 +465,8 @@ public class HdsClient implements ILibrary {
         int clientPort = _myMap.get(tosend);
 
         String answerS="";
-        answerS = connectToClient("localhost", clientPort, request);
 
+        answerS = connectToClient("localhost", clientPort, request);
         JSONObject serverJson = new JSONObject(answerS);
 
         if(validateServerRequest(serverJson)) {
@@ -476,12 +477,15 @@ public class HdsClient implements ILibrary {
 
 
             JSONObject goodRequest = getStateOfGood(refreshGood);
+
+
             if (goodRequest != null && goodRequest.has("Value")) {
                 long t = new JSONObject(goodRequest.getString("Value")).getLong("wts");
                 if (_register._wts < t)
                     _register._wts = t;
                 System.out.println(answerS);
             }
+
             return serverJson;
         }
         else {

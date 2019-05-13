@@ -140,7 +140,9 @@ public class ClientServiceTest extends BaseTest {
         checkAnswer(answerITS, "YES");
 
         JSONObject answerGSOG = hBuyer.getStateOfGood(getStateOfGoodRequest);
+        System.out.println(answerGSOG.toString());
         isSigned(answerGSOG, hSeller.serverPublicKey);
+
         checkGood(answerGSOG, "user1", "good7", "true");
     }
 

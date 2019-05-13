@@ -58,13 +58,13 @@ public class HdsServerClient implements Runnable {
         }
         catch (java.net.SocketException socketEx) {
             _client.logger.error(socketEx.getMessage());
-            //socketEx.printStackTrace();
+            socketEx.printStackTrace();
             //Thread.currentThread().interrupt();
             //break;
         }
         catch (Exception e) {
             _client.logger.error(e.getMessage());
-            //e.printStackTrace();
+            e.printStackTrace();
             //break;
         }
         //}
