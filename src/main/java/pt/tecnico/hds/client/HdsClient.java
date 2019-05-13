@@ -200,7 +200,7 @@ public class HdsClient implements ILibrary {
 
                 // establish the connection with server port 5056
                 Socket s = new Socket(ip, port);
-                s.setSoTimeout(10 * 1000);
+                s.setSoTimeout(50 * 1000);
                 // obtaining input and out streams
                 DataInputStream dis = new DataInputStream(s.getInputStream());
                 DataOutputStream dos = new DataOutputStream(s.getOutputStream());
