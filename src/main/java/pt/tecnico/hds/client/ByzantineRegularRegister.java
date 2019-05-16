@@ -33,6 +33,25 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         return null;
     }
 
+    public void sendEvilMessage(AnswerThread responses[], JSONObject request){
+        for (int i=0;i< client.NREPLICAS;i++) {
+            if (i == 0) {
+                responses[i] = new AnswerThread(i, client, client.sendJson("IntentionToSell good17"));
+            }
+            else {
+                responses[i] = new AnswerThread(i, client, request);
+            }
+            responses[i].start();
+        }
+        for (int i=0;i< client.NREPLICAS;i++) {
+            try {
+                responses[i].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void sendMessages(AnswerThread responses[], JSONObject request){
         for (int i=0;i< client.NREPLICAS;i++) {
             responses[i] = new AnswerThread(i, client, request);
@@ -51,7 +70,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         String answerS = "";
         AnswerThread responses[] = new AnswerThread[Main.replicas];
 
-        sendMessages(responses, request);
+        sendEvilMessage(responses, request);
 
         for (int i=0;i< client.NREPLICAS;i++) {
             if (responses[i].auxS != null) {

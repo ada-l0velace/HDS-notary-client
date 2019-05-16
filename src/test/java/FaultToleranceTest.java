@@ -5,7 +5,8 @@ import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import pt.tecnico.hds.client.HdsClient;
+import org.powermock.api.mockito.PowerMockito;
+import pt.tecnico.hds.client.*;
 
 import static org.mockito.Mockito.*;
 
@@ -136,5 +137,7 @@ public class FaultToleranceTest extends BaseTest {
         checkGood(answerGSOGR, t._name, "good1", "false");
 
     }
+
+
 
 }

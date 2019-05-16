@@ -28,7 +28,7 @@ public class HdsClient implements ILibrary {
     public String serverPublicKey;
     public JSONArray requests = new JSONArray();
     public Thread serverThread;
-    ByzantineRegister _register = new ByzantineAtomicRegister(this);
+    public ByzantineRegister _register = new ByzantineAtomicRegister(this);
 
     public HdsClient(String name, int port) {
         _name = name;
