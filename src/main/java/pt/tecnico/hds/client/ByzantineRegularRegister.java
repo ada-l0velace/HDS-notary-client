@@ -33,6 +33,11 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         return null;
     }
 
+    /**
+     * This method is only for tests, it's a simulator for a byzantine client.
+     * @param responses
+     * @param request
+     */
     public void sendEvilMessage(AnswerThread responses[], JSONObject request){
         for (int i=0;i< client.NREPLICAS;i++) {
             if (i == 0) {
@@ -70,7 +75,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         String answerS = "";
         AnswerThread responses[] = new AnswerThread[Main.replicas];
 
-        sendEvilMessage(responses, request);
+        sendMessages(responses, request);
 
         for (int i=0;i< client.NREPLICAS;i++) {
             if (responses[i].auxS != null) {
