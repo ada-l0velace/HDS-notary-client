@@ -1,6 +1,7 @@
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Categories;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import pt.tecnico.hds.client.HdsClient;
@@ -17,6 +18,10 @@ public class SecurityTestCase extends BaseTest {
         super();
     }
 
+    @Test
+    public void testweqweqwe() throws Exception {
+        assumeTrue(true);
+    }
     @Test
     public void testIfClientIsSigningTheMessage() {
         HdsClient h = ClientServiceTest.getClient("client1");//new HdsClient("user1", port);
@@ -67,6 +72,7 @@ public class SecurityTestCase extends BaseTest {
         mitmBuyGood.put("Message", mitm.toString());
         checkAnswer(cBuyer.buyGood(mitmBuyGood), "NO");
     }
+
 
     @Test
     public void testReplayAttackBuyGood() throws Exception {

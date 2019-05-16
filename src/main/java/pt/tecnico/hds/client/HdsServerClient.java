@@ -32,6 +32,7 @@ public class HdsServerClient implements Runnable {
 
             // write on output stream based on the
             // answer from the client
+
             JSONObject jsonObj = new JSONObject(received);
             JSONObject saved = jsonObj;
             jsonObj = new JSONObject(jsonObj.getString("Message"));

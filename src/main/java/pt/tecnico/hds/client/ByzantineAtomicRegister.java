@@ -57,6 +57,7 @@ public class ByzantineAtomicRegister extends ByzantineRegularRegister {
         if (_acks.size() > (client.NREPLICAS + Main.f)/2) {
             if (reading) {
                 reading = false;
+                System.out.println(highestValue.getMessage());
                 //System.out.println("WTFFFFFFFFFFFFFFFFF");
                 //checkSignature(doCheckSignature, highestValue.getMessage().toString());
                 return highestValue.getMessage();

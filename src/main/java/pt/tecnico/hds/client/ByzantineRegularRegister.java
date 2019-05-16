@@ -37,7 +37,6 @@ public class ByzantineRegularRegister extends ByzantineRegister {
         for (int i=0;i< client.NREPLICAS;i++) {
             responses[i] = new AnswerThread(i, client, request);
             responses[i].start();
-
         }
         for (int i=0;i< client.NREPLICAS;i++) {
             try {

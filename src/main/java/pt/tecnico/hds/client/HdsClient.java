@@ -200,7 +200,8 @@ public class HdsClient implements ILibrary {
 
                 // establish the connection with server port 5056
                 Socket s = new Socket(ip, port);
-                s.setSoTimeout(50 * 1000);
+                //s.setSoTimeout(100 * 1000);
+                //s.setKeepAlive(true);
                 // obtaining input and out streams
                 DataInputStream dis = new DataInputStream(s.getInputStream());
                 DataOutputStream dos = new DataOutputStream(s.getOutputStream());
@@ -215,6 +216,9 @@ public class HdsClient implements ILibrary {
                         dos.writeUTF(jo.toString());
                         //System.out.println(_port);
                         String receivedChallenge = dis.readUTF();
+                        if(receivedChallenge.equals("")) {
+                            throw new java.io.EOFException();
+                        }
                         JSONObject challenge = new JSONObject(receivedChallenge);
                         received = solveChallenge(challenge, dis, dos);
                         //requests.put(new JSONObject(received));
@@ -231,21 +235,24 @@ public class HdsClient implements ILibrary {
                     dis.close();
                     dos.close();
 
-                } catch (java.net.SocketTimeoutException timeout) {
-                    logger.error(timeout.getMessage() + " on port:" + port);
-                    //timeout.printStackTrace();
-                    s.close();
-                    break;
-
-                } catch (java.io.EOFException e0) {
-                    //e0.printStackTrace();
-                    s.close();
-                    break;
-                } catch (Exception e) {
+                } catch ( IOException e) {
+                    logger.error(e.getMessage() + " on port:" + port);
                     //e.printStackTrace();
+                    retries++;
+                    dis.close();
+                    dos.close();
+                    s.close();
+                    if (retries == maxRetries)
+                        break;
+                    continue;
+                    //e.printStackTrace();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
                     s.close();
                     break;
                 }
+
 
 
                 break;
@@ -253,7 +260,7 @@ public class HdsClient implements ILibrary {
 
             } catch (IOException e) {
                 logger.error(e.getMessage() + " on port:" + port);
-                //e.printStackTrace();
+                e.printStackTrace();
                 retries++;
                 if (retries == maxRetries)
                     break;
