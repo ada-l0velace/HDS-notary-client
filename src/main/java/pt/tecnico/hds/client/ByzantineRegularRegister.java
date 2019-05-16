@@ -34,7 +34,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
     }
 
     /**
-     * This method is only for tests, it's a simulator for a byzantine client.
+     * This method is only for tests, it's a simulator for a binzantine client.
      * @param responses
      * @param request
      */
