@@ -38,7 +38,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
      * @param responses
      * @param request
      */
-    public void sendEvilMessage(AnswerThread responses[], JSONObject request){
+    /*public void sendEvilMessage(AnswerThread responses[], JSONObject request){
         for (int i=0;i< client.NREPLICAS;i++) {
             if (i == 0) {
                 responses[i] = new AnswerThread(i, client, client.sendJson("IntentionToSell good17"));
@@ -55,7 +55,7 @@ public class ByzantineRegularRegister extends ByzantineRegister {
                 e.printStackTrace();
             }
         }
-    }
+    }*/
 
     public void sendMessages(AnswerThread responses[], JSONObject request){
         for (int i=0;i< client.NREPLICAS;i++) {
